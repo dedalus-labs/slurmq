@@ -9,18 +9,18 @@ on:
       - "**.py"
       - "scripts/**.sh"
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   add-copyright:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true # Needed for git push
 
       - name: Add missing copyright headers
         run: |
@@ -32,10 +32,10 @@ jobs:
         run: |
           if git diff --quiet; then
             echo "changed=false" >> $GITHUB_OUTPUT
-            echo "✅ All files already have copyright headers"
+            echo "ok: All files already have copyright headers"
           else
             echo "changed=true" >> $GITHUB_OUTPUT
-            echo "📝 Added copyright headers to:"
+            echo "Added copyright headers to:"
             git diff --name-only
           fi
 

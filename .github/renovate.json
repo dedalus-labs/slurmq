@@ -42,6 +42,7 @@
       "matchManagers": ["github-actions"],
       "groupName": "github-actions",
       "commitMessagePrefix": "ci:",
+      "pinDigests": true,
       "automerge": true,
       "automergeType": "branch"
     }

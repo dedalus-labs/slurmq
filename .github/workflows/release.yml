@@ -1,3 +1,5 @@
+# Copyright (c) 2025 Dedalus Labs, Inc. and its contributors
+# SPDX-License-Identifier: MIT
 # -----------------------------------------------------------------------------
 # File: .github/workflows/release.yml
 # Purpose: Release-please for slurmq semantic versioning + PyPI publish
@@ -12,23 +14,22 @@ on:
       - "src/**"
       - "pyproject.toml"
       - "uv.lock"
-      # Excludes: .github/**, docs/**, scripts/**, tests/**
-
-permissions:
-  contents: write
-  pull-requests: write
-  id-token: write # For trusted PyPI publishing
 
 jobs:
   release:
     name: Create Release PR
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.releases_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
       version: ${{ steps.release.outputs.version }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Run release-please
         id: release
@@ -40,34 +41,38 @@ jobs:
 
       - name: Release summary
         if: steps.release.outputs.releases_created == 'true'
+        env:
+          TAG_NAME: ${{ steps.release.outputs.tag_name }}
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
           echo "## slurmq Release Created" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Tag | ${{ steps.release.outputs.tag_name }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Version | ${{ steps.release.outputs.version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tag | $TAG_NAME |" >> $GITHUB_STEP_SUMMARY
+          echo "| Version | $VERSION |" >> $GITHUB_STEP_SUMMARY
 
   publish:
     name: Publish to PyPI
     needs: release
     if: needs.release.outputs.release_created == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # For trusted PyPI publishing
     environment:
       name: pypi
       url: https://pypi.org/project/slurmq/
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
+        # No cache for publish job - prevents cache poisoning
 
       - name: Build package
         run: uv build
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # Uses trusted publishing - no API token needed
-        # Configure at: https://pypi.org/manage/project/slurmq/settings/publishing/
