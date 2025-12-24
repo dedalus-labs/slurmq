@@ -24,7 +24,7 @@ rich_traceback(show_locals=False)
 
 app = typer.Typer(
     name="slurmq",
-    help="Slurm GPU quota monitoring and management.",
+    help="Quota monitoring and management for Slurm.",
     add_completion=True,
     rich_markup_mode="rich",
     no_args_is_help=False,
@@ -86,7 +86,7 @@ def main(
     config_path: str | None = typer.Option(None, "--config", help="Path to config file"),
     version: bool = typer.Option(False, "--version", help="Show version"),
 ) -> None:
-    """Slurm GPU quota monitoring and management.
+    """Quota monitoring and management for Slurm.
 
     Run without a subcommand to check your quota (same as 'slurmq check').
     """
