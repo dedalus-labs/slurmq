@@ -76,7 +76,7 @@ class TestQuietMode:
     def test_check_quiet_suppresses_output(
         self, config_file: Path, mock_sacct_output: dict, monkeypatch: MonkeyPatch
     ) -> None:
-        """check --quiet produces no output on success."""
+        """Check --quiet produces no output on success."""
         import subprocess
 
         def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str]:
@@ -93,7 +93,7 @@ class TestQuietMode:
         assert result.stdout.strip() == ""
 
     def test_check_quiet_shows_errors(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
-        """check --quiet still shows errors."""
+        """Check --quiet still shows errors."""
         # Point to non-existent config
         monkeypatch.setenv("SLURMQ_CONFIG", str(tmp_path / "nonexistent.toml"))
 
@@ -104,7 +104,7 @@ class TestQuietMode:
     def test_monitor_quiet_suppresses_table(
         self, config_file: Path, mock_sacct_output: dict, monkeypatch: MonkeyPatch
     ) -> None:
-        """monitor --once --quiet produces no output on success."""
+        """Monitor --once --quiet produces no output on success."""
         import subprocess
 
         def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess[str]:

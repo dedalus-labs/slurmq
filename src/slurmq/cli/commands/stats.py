@@ -10,11 +10,26 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from statistics import median
+
 import typer
 from rich.console import Console
 from rich.table import Table
 
 console = Console()
+
+
+@dataclass
+class JobStats:
+    """Parsed job statistics from sacct."""
+
+    n_gpus: int
+    elapsed_h: float
+    gpu_hours: float
+    wait_hours: float
+    start_time: int
+    partition: str
+    qos: str
+    group: str = ""  # Aggregation group (partition or QoS name)
 
 
 @dataclass
@@ -39,7 +54,7 @@ class PeriodStats:
 
 def fetch_partition_data(
     partition: str | None, qos: str | None, start_date: str, end_date: str, account: str | None = None
-) -> list[dict]:
+) -> list[JobStats]:
     """Fetch job data from sacct for a partition/QoS."""
     cmd = [
         "sacct",
@@ -65,7 +80,7 @@ def fetch_partition_data(
         return []
 
 
-def parse_jobs(data: dict) -> list[dict]:
+def parse_jobs(data: dict) -> list[JobStats]:
     """Parse sacct JSON output into job records."""
     jobs = []
     for job in data.get("jobs", []):
@@ -89,21 +104,21 @@ def parse_jobs(data: dict) -> list[dict]:
             continue
 
         jobs.append(
-            {
-                "n_gpus": n_gpus,
-                "elapsed_h": elapsed / 3600,
-                "gpu_hours": (n_gpus * elapsed) / 3600,
-                "wait_hours": wait_time / 3600,
-                "start_time": start_time,
-                "partition": job.get("partition", "unknown"),
-                "qos": job.get("qos", "unknown"),
-            }
+            JobStats(
+                n_gpus=n_gpus,
+                elapsed_h=elapsed / 3600,
+                gpu_hours=(n_gpus * elapsed) / 3600,
+                wait_hours=wait_time / 3600,
+                start_time=start_time,
+                partition=job.get("partition", "unknown"),
+                qos=job.get("qos", "unknown"),
+            )
         )
 
     return jobs
 
 
-def calculate_partition_stats(jobs: list[dict], name: str) -> PartitionStats:
+def calculate_partition_stats(jobs: list[JobStats], name: str) -> PartitionStats:
     """Calculate statistics for a set of jobs."""
     if not jobs:
         return PartitionStats(
@@ -111,14 +126,14 @@ def calculate_partition_stats(jobs: list[dict], name: str) -> PartitionStats:
         )
 
     job_count = len(jobs)
-    gpu_hours = sum(j["gpu_hours"] for j in jobs)
+    gpu_hours = sum(job.gpu_hours for job in jobs)
 
     # Calculate median wait time
-    wait_times = [j["wait_hours"] for j in jobs]
+    wait_times = [job.wait_hours for job in jobs]
     median_wait = median(wait_times) if wait_times else 0.0
 
     # Long wait jobs (> 6 hours)
-    long_wait_count = sum(1 for j in jobs if j["wait_hours"] > 6)
+    long_wait_count = sum(1 for job in jobs if job.wait_hours > 6)
     long_wait_pct = (long_wait_count / job_count * 100) if job_count > 0 else 0
 
     return PartitionStats(
@@ -220,8 +235,8 @@ def stats(
     if not cli_ctx.json_output:
         console.print(f"[dim]Fetching data for the last {days} days...[/dim]")
 
-    all_current_jobs: list[dict] = []
-    all_previous_jobs: list[dict] = []
+    all_current_jobs: list[JobStats] = []
+    all_previous_jobs: list[JobStats] = []
 
     for part, q in partitions_to_check:
         name = part or q or "unknown"
@@ -230,13 +245,13 @@ def stats(
 
         current_jobs = fetch_partition_data(part, q, current_start, current_end, account)
         for job in current_jobs:
-            job["_group"] = name
+            job.group = name
         all_current_jobs.extend(current_jobs)
 
         if compare:
             previous_jobs = fetch_partition_data(part, q, previous_start, previous_end, account)
             for job in previous_jobs:
-                job["_group"] = name
+                job.group = name
             all_previous_jobs.extend(previous_jobs)
 
     if not all_current_jobs:
@@ -253,20 +268,19 @@ def stats(
         _output_rich(all_current_jobs, all_previous_jobs, days, compare, small_threshold, partitions_to_check)
 
 
-def _output_json(current_jobs: list[dict], previous_jobs: list[dict], days: int, threshold: float) -> None:
+def _output_json(current_jobs: list[JobStats], previous_jobs: list[JobStats], days: int, threshold: float) -> None:
     """Output stats as JSON."""
     import json as json_module
 
-    def jobs_to_stats(jobs: list[dict]) -> dict:
-        groups: dict[str, list[dict]] = {}
+    def jobs_to_stats(jobs: list[JobStats]) -> dict:
+        groups: dict[str, list[JobStats]] = {}
         for job in jobs:
-            group = job.get("_group", "unknown")
-            groups.setdefault(group, []).append(job)
+            groups.setdefault(job.group or "unknown", []).append(job)
 
         result = {}
         for name, group_jobs in groups.items():
-            small = [j for j in group_jobs if j["gpu_hours"] <= threshold]
-            large = [j for j in group_jobs if j["gpu_hours"] > threshold]
+            small = [job for job in group_jobs if job.gpu_hours <= threshold]
+            large = [job for job in group_jobs if job.gpu_hours > threshold]
 
             result[name] = {
                 "all": _stats_dict(calculate_partition_stats(group_jobs, name)),
@@ -292,8 +306,8 @@ def _output_json(current_jobs: list[dict], previous_jobs: list[dict], days: int,
 
 
 def _output_rich(
-    current_jobs: list[dict],
-    previous_jobs: list[dict],
+    current_jobs: list[JobStats],
+    previous_jobs: list[JobStats],
     days: int,
     compare: bool,
     threshold: float,
@@ -302,11 +316,10 @@ def _output_rich(
     """Output stats with Rich formatting."""
 
     # Group jobs by partition/QoS
-    def group_jobs(jobs: list[dict]) -> dict[str, list[dict]]:
-        groups: dict[str, list[dict]] = {}
+    def group_jobs(jobs: list[JobStats]) -> dict[str, list[JobStats]]:
+        groups: dict[str, list[JobStats]] = {}
         for job in jobs:
-            group = job.get("_group", "unknown")
-            groups.setdefault(group, []).append(job)
+            groups.setdefault(job.group or "unknown", []).append(job)
         return groups
 
     current_groups = group_jobs(current_jobs)
@@ -347,8 +360,8 @@ def _output_rich(
 
 
 def _print_wait_table(
-    current_groups: dict[str, list[dict]],
-    previous_groups: dict[str, list[dict]],
+    current_groups: dict[str, list[JobStats]],
+    previous_groups: dict[str, list[JobStats]],
     partitions: list[tuple[str | None, str | None]],
     days: int,
     compare: bool,
@@ -370,11 +383,11 @@ def _print_wait_table(
         previous_all = previous_groups.get(name, [])
 
         if is_small:
-            current = [j for j in current_all if j["gpu_hours"] <= threshold]
-            previous = [j for j in previous_all if j["gpu_hours"] <= threshold]
+            current = [job for job in current_all if job.gpu_hours <= threshold]
+            previous = [job for job in previous_all if job.gpu_hours <= threshold]
         else:
-            current = [j for j in current_all if j["gpu_hours"] > threshold]
-            previous = [j for j in previous_all if j["gpu_hours"] > threshold]
+            current = [job for job in current_all if job.gpu_hours > threshold]
+            previous = [job for job in previous_all if job.gpu_hours > threshold]
 
         current_stats = calculate_partition_stats(current, name)
         previous_stats = calculate_partition_stats(previous, name) if previous else None

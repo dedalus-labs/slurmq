@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
@@ -231,7 +231,7 @@ class TestQuotaChecker:
 
     def test_filter_records_by_time(self, checker: QuotaChecker) -> None:
         """Can filter records within time window."""
-        now = datetime.now()
+        now = datetime.now(tz=UTC)
         records = [
             JobRecord(
                 job_id=1,
@@ -264,7 +264,7 @@ class TestQuotaChecker:
 
     def test_generate_report(self, checker: QuotaChecker) -> None:
         """Can generate a usage report."""
-        now = datetime.now()
+        now = datetime.now(tz=UTC)
         # Create records with recent timestamps that will be within the rolling window
         records = [
             JobRecord(
@@ -301,7 +301,7 @@ class TestQuotaChecker:
 
     def test_forecast_quota(self, checker: QuotaChecker) -> None:
         """Can forecast quota availability at future times."""
-        now = datetime.now()
+        now = datetime.now(tz=UTC)
         # Create records with specific timestamps for forecasting
         records = [
             JobRecord(

@@ -143,6 +143,7 @@ class TestReportCommand:
         reader = csv.DictReader(io.StringIO(result.stdout))
         rows = list(reader)
         assert len(rows) >= 2
+        assert reader.fieldnames is not None
         assert "user" in reader.fieldnames
         assert "used_gpu_hours" in reader.fieldnames
 

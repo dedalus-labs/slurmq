@@ -23,7 +23,7 @@ class TestConfigValidateCommand:
     """Tests for the config validate subcommand."""
 
     def test_validate_help(self) -> None:
-        """config validate has help text."""
+        """Config validate has help text."""
         result = runner.invoke(app, ["config", "validate", "--help"])
         assert result.exit_code == 0
         assert "validate" in result.stdout.lower()

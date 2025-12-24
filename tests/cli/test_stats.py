@@ -183,9 +183,13 @@ class TestStatsCalculations:
 
     def test_calculate_partition_stats_single_job(self):
         """Test stats calculation with single job."""
-        from slurmq.cli.commands.stats import calculate_partition_stats
+        from slurmq.cli.commands.stats import JobStats, calculate_partition_stats
 
-        jobs = [{"gpu_hours": 10, "wait_hours": 2, "n_gpus": 2, "elapsed_h": 5}]
+        jobs = [
+            JobStats(
+                n_gpus=2, elapsed_h=5, gpu_hours=10, wait_hours=2, start_time=0, partition="gpu", qos="normal"
+            )
+        ]
         stats = calculate_partition_stats(jobs, "test")
 
         assert stats.job_count == 1
@@ -195,12 +199,12 @@ class TestStatsCalculations:
 
     def test_calculate_partition_stats_long_wait(self):
         """Test long wait detection (> 6 hours)."""
-        from slurmq.cli.commands.stats import calculate_partition_stats
+        from slurmq.cli.commands.stats import JobStats, calculate_partition_stats
 
         jobs = [
-            {"gpu_hours": 10, "wait_hours": 2, "n_gpus": 2, "elapsed_h": 5},
-            {"gpu_hours": 20, "wait_hours": 8, "n_gpus": 4, "elapsed_h": 5},  # Long wait
-            {"gpu_hours": 15, "wait_hours": 10, "n_gpus": 3, "elapsed_h": 5},  # Long wait
+            JobStats(n_gpus=2, elapsed_h=5, gpu_hours=10, wait_hours=2, start_time=0, partition="gpu", qos="normal"),
+            JobStats(n_gpus=4, elapsed_h=5, gpu_hours=20, wait_hours=8, start_time=0, partition="gpu", qos="normal"),
+            JobStats(n_gpus=3, elapsed_h=5, gpu_hours=15, wait_hours=10, start_time=0, partition="gpu", qos="normal"),
         ]
         stats = calculate_partition_stats(jobs, "test")
 
@@ -292,6 +296,6 @@ class TestParseJobs:
         }
         jobs = parse_jobs(data)
         assert len(jobs) == 1
-        assert jobs[0]["n_gpus"] == 4
-        assert jobs[0]["gpu_hours"] == 4.0  # 4 GPUs * 1 hour
-        assert jobs[0]["wait_hours"] == 100 / 3600  # 100 seconds
+        assert jobs[0].n_gpus == 4
+        assert jobs[0].gpu_hours == 4.0  # 4 GPUs * 1 hour
+        assert jobs[0].wait_hours == 100 / 3600  # 100 seconds
