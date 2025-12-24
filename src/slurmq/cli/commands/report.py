@@ -17,7 +17,8 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from slurmq.core.quota import JobRecord, QuotaChecker, QuotaStatus, fetch_user_jobs
+from slurmq.core.models import JobRecord, QuotaStatus
+from slurmq.core.quota import QuotaChecker, fetch_user_jobs
 
 if TYPE_CHECKING:
     from slurmq.cli.main import CLIContext

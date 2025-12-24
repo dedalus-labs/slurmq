@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 from slurmq.core.config import ClusterConfig
-from slurmq.core.quota import JobRecord, JobState, QuotaChecker, QuotaStatus, UsageReport, parse_sacct_json
+from slurmq.core.models import JobRecord, JobState, QuotaStatus, UsageReport, parse_sacct_json
+from slurmq.core.quota import QuotaChecker
 
 if TYPE_CHECKING:
     from pytest import MonkeyPatch

@@ -15,7 +15,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from slurmq.core.quota import QuotaChecker, QuotaStatus, UsageReport, fetch_user_jobs
+from slurmq.core.models import QuotaStatus, UsageReport
+from slurmq.core.quota import QuotaChecker, fetch_user_jobs
 
 if TYPE_CHECKING:
     from slurmq.cli.main import CLIContext
