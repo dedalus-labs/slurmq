@@ -75,7 +75,7 @@ exceeded=$(slurmq --json report | jq '[.users[] | select(.status == "exceeded")]
 
 if [ "$exceeded" -gt 0 ]; then
   curl -X POST -H 'Content-type: application/json' \
-    --data "{\"text\":\"⚠️ $exceeded users have exceeded GPU quota\"}" \
+    --data "{\"text\":\"warning: $exceeded users have exceeded GPU quota\"}" \
     "$WEBHOOK_URL"
 fi
 ```

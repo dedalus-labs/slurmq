@@ -67,9 +67,7 @@ class TestConfigInit:
         monkeypatch.setenv("SLURMQ_CONFIG", str(config_path))
 
         # Simulate user input: cluster name, account, qos, quota
-        runner.invoke(
-            app, ["config", "init"], input="stella\nStella HPC\nresearch-group\nhigh-priority\n500\n30\n"
-        )
+        runner.invoke(app, ["config", "init"], input="stella\nStella HPC\nresearch-group\nhigh-priority\n500\n30\n")
 
         # Should create the file
         assert config_path.exists()
@@ -93,9 +91,7 @@ class TestConfigInit:
         config_path.write_text("default_cluster = 'oldclustername'")
         monkeypatch.setenv("SLURMQ_CONFIG", str(config_path))
 
-        runner.invoke(
-            app, ["config", "init"], input="y\nnewcluster\nNew Cluster\nmyaccount\nnormal\n100\n14\n"
-        )
+        runner.invoke(app, ["config", "init"], input="y\nnewcluster\nNew Cluster\nmyaccount\nnormal\n100\n14\n")
 
         content = config_path.read_text()
         assert "newcluster" in content.lower()

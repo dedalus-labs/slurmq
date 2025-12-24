@@ -169,23 +169,17 @@ def format_pct_change(current: float, previous: float) -> str:
     return f" [{color}]({sign}{pct:.0f}%)[/{color}]"
 
 
-_PARTITION_OPTION: list[str] | None = typer.Option(
-    None, "--partition", "-p", help="Filter by partition(s)"
-)
+_PARTITION_OPTION: list[str] | None = typer.Option(None, "--partition", "-p", help="Filter by partition(s)")
 _QOS_OPTION: list[str] | None = typer.Option(None, "--qos", "-q", help="Filter by QoS(s)")
 
 
 def stats(
     ctx: typer.Context,
     days: int = typer.Option(30, "--days", "-d", help="Analysis period in days"),
-    compare: bool = typer.Option(
-        True, "--compare/--no-compare", help="Show month-over-month comparison"
-    ),
+    compare: bool = typer.Option(True, "--compare/--no-compare", help="Show month-over-month comparison"),
     partition: list[str] | None = _PARTITION_OPTION,
     qos: list[str] | None = _QOS_OPTION,
-    small_threshold: float = typer.Option(
-        50, "--small-threshold", help="GPU-hours threshold for small vs large jobs"
-    ),
+    small_threshold: float = typer.Option(50, "--small-threshold", help="GPU-hours threshold for small vs large jobs"),
 ) -> None:
     """Show cluster statistics and analytics.
 
@@ -237,7 +231,7 @@ def stats(
     for part, q in partitions_to_check:
         name = part or q or "unknown"
         if not cli_ctx.json_output:
-            console.print(f"[dim]  → {name}[/dim]")
+            console.print(f"[dim]  -> {name}[/dim]")
 
         current_jobs = fetch_partition_data(part, q, current_start, current_end, account)
         for job in current_jobs:

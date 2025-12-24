@@ -72,31 +72,17 @@ exempt_job_prefixes = ["checkpoint_"]
 
 ### Enforcement flow
 
-```
-User exceeds quota
-        │
-        ▼
-    Grace period?  ──Yes──▶  Send warning email
-        │
-        No
-        │
-        ▼
-    User exempt?   ──Yes──▶  Skip
-        │
-        No
-        │
-        ▼
-    Job exempt?    ──Yes──▶  Skip
-        │
-        No
-        │
-        ▼
-    dry_run?       ──Yes──▶  Log only
-        │
-        No
-        │
-        ▼
-    Cancel job + send notification
+```mermaid
+flowchart TD
+    A[User exceeds quota] --> B{Grace period?}
+    B -->|Yes| C[Send warning email]
+    B -->|No| D{User exempt?}
+    D -->|Yes| E[Skip]
+    D -->|No| F{Job exempt?}
+    F -->|Yes| E
+    F -->|No| G{dry_run?}
+    G -->|Yes| H[Log only]
+    G -->|No| I[Cancel job + send notification]
 ```
 
 ## Cron setup
@@ -137,14 +123,14 @@ ExecStart=/usr/local/bin/slurmq --quiet monitor --once --enforce
 
 The live dashboard shows:
 
-```
+```console
 ┌─────────────────── slurmq monitor ───────────────────┐
 │  Cluster: Della    QoS: normal    Refresh: 30s       │
 ├──────────────────────────────────────────────────────┤
 │  User     Used      Remaining   Status   Active      │
-│  alice    487.5     12.5        ⚠ WARN   3           │
-│  bob      342.0     158.0       ✓ OK     1           │
-│  charlie  512.5     -12.5       ✗ OVER   2 → cancel  │
+│  alice    487.5     12.5        ! WARN   3           │
+│  bob      342.0     158.0       ok       1           │
+│  charlie  512.5     -12.5       x OVER   2 -> cancel │
 ├──────────────────────────────────────────────────────┤
 │  Last check: 2024-01-15 14:30:00                     │
 │  Press q to quit                                     │

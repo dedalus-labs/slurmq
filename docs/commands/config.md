@@ -42,7 +42,7 @@ slurmq config path
 
 Output:
 
-```
+```console
 Config file: /home/user/.config/slurmq/config.toml
 Status: exists
 ```
@@ -65,14 +65,14 @@ Checks for:
 
 Example output:
 
-```
-✓ Config file is valid: /home/user/.config/slurmq/config.toml
+```console
+ok: Config file is valid: /home/user/.config/slurmq/config.toml
 ```
 
 Or with errors:
 
-```
-✗ Config validation failed:
+```console
+error: Config validation failed:
   - monitoring.warning_threshold (1.5) must be between 0 and 1
   - default_cluster "nonexistent" not found in clusters
 ```

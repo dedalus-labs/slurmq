@@ -269,7 +269,7 @@ def _output_table(statuses: list[UserStatus], cluster_name: str) -> None:
     table.add_column("Active Jobs", justify="right")
 
     status_styles = {QuotaStatus.OK: "green", QuotaStatus.WARNING: "yellow", QuotaStatus.EXCEEDED: "red"}
-    status_icons = {"ok": "✓", "warning": "⚠", "exceeded": "✗"}
+    status_icons = {"ok": "ok", "warning": "!", "exceeded": "x"}
 
     for s in statuses:
         style = status_styles[s.status]

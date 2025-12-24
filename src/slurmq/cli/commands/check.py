@@ -31,7 +31,7 @@ def _to_yaml(data: dict) -> str:
         prefix = "  " * indent
         if isinstance(obj, dict):
             for k, v in obj.items():
-                if isinstance(v, (dict, list)):
+                if isinstance(v, dict | list):
                     lines.append(f"{prefix}{k}:")
                     serialize(v, indent + 1)
                 else:
@@ -180,10 +180,10 @@ def _output_rich(
     # Status message
     if report.status == QuotaStatus.EXCEEDED:
         lines.append(
-            f"\n[red bold]⚠ WARNING: QUOTA EXCEEDED![/red bold]\nJobs submitted to {report.qos} may be cancelled."
+            f"\n[red bold]WARNING: QUOTA EXCEEDED![/red bold]\nJobs submitted to {report.qos} may be cancelled."
         )
     elif report.status == QuotaStatus.WARNING:
-        lines.append("\n[yellow]⚠ Warning: Approaching quota limit.[/yellow]")
+        lines.append("\n[yellow]Warning: Approaching quota limit.[/yellow]")
 
     # Create panel
     panel = Panel("\n".join(lines), title="[bold]GPU Quota Report[/bold]", border_style=color)

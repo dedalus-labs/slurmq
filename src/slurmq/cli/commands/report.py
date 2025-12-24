@@ -200,7 +200,7 @@ def _output_rich(usages: list[UserUsage], cluster_name: str, qos: str | None) ->
 
     for u in usages:
         style = status_styles[u.status]
-        status_icon = {"ok": "✓", "warning": "⚠", "exceeded": "✗"}[u.status.value]
+        status_icon = {"ok": "ok", "warning": "!", "exceeded": "x"}[u.status.value]
 
         table.add_row(
             u.user,

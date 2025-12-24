@@ -29,7 +29,7 @@ slurmq stats
 
 Output:
 
-```
+```console
            GPU Utilization (Last 30 Days)
 ┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
 ┃ Partition    ┃ GPU Hours     ┃ Jobs       ┃

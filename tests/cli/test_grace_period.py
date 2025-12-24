@@ -135,7 +135,6 @@ class TestGracePeriod:
         """Jobs from users who exceeded quota outside grace period are cancelled."""
         import subprocess
 
-
         # User exceeded quota 36 hours ago (outside 24h grace)
         mock_output = {
             "jobs": [
@@ -195,9 +194,7 @@ class TestGracePeriod:
 class TestGracePeriodJSON:
     """Tests for grace period in JSON output."""
 
-    def test_json_includes_grace_period_status(
-        self, config_with_grace_period: Path, monkeypatch: MonkeyPatch
-    ) -> None:
+    def test_json_includes_grace_period_status(self, config_with_grace_period: Path, monkeypatch: MonkeyPatch) -> None:
         """JSON output includes whether user is in grace period."""
         import subprocess
 

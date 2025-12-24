@@ -79,9 +79,7 @@ def init(ctx: typer.Context) -> None:
     config_path = get_config_path()
 
     # Check if config exists
-    if config_path.exists() and not Confirm.ask(
-        f"Config already exists at {config_path}. Overwrite?", default=False
-    ):
+    if config_path.exists() and not Confirm.ask(f"Config already exists at {config_path}. Overwrite?", default=False):
         console.print("[yellow]Aborted.[/yellow]")
         return
 
@@ -116,7 +114,7 @@ def init(ctx: typer.Context) -> None:
     config_path.parent.mkdir(parents=True, exist_ok=True)
     config.save(config_path)
 
-    console.print(f"\n[green]✓[/green] Configuration saved to {config_path}")
+    console.print(f"\n[green]ok:[/green] Configuration saved to {config_path}")
     console.print("\nYou can now run [bold]slurmq check[/bold] to check your quota.")
 
 
@@ -145,7 +143,7 @@ def set_value(
     with config_path.open("wb") as f:
         tomli_w.dump(data, f)
 
-    console.print(f"[green]✓[/green] Set {key} = {value}")
+    console.print(f"[green]ok:[/green] Set {key} = {value}")
 
 
 def _set_nested(data: dict[str, Any], keys: list[str], value: Any) -> None:
@@ -209,4 +207,4 @@ def validate(
                 console.print(f"  [red]•[/red] {error}")
             raise typer.Exit(1)
         else:
-            console.print(f"[green]✓[/green] Config valid: {config_path}")
+            console.print(f"[green]ok:[/green] Config valid: {config_path}")

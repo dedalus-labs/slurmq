@@ -24,7 +24,7 @@ slurmq efficiency 12345678
 
 Output:
 
-```
+```console
 ╭──────────────── Job Efficiency Report ────────────────╮
 │                                                       │
 │  Job ID:     12345678                                 │
@@ -34,7 +34,7 @@ Output:
 │  State:      COMPLETED                                │
 │                                                       │
 │  CPU Efficiency:    78.5%  ████████░░                 │
-│  Memory Efficiency: 45.2%  █████░░░░░  ⚠ Low          │
+│  Memory Efficiency: 45.2%  █████░░░░░  ! Low          │
 │                                                       │
 │  Cores requested:   32                                │
 │  CPU time used:     12h 30m (of 16h allocated)        │

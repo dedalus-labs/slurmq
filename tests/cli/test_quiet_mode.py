@@ -92,9 +92,7 @@ class TestQuietMode:
         assert result.exit_code == 0
         assert result.stdout.strip() == ""
 
-    def test_check_quiet_shows_errors(
-        self, tmp_path: Path, monkeypatch: MonkeyPatch
-    ) -> None:
+    def test_check_quiet_shows_errors(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
         """check --quiet still shows errors."""
         # Point to non-existent config
         monkeypatch.setenv("SLURMQ_CONFIG", str(tmp_path / "nonexistent.toml"))

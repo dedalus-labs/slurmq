@@ -30,7 +30,7 @@ slurmq provides several commands for managing GPU quotas.
 
 These options work with all commands:
 
-```
+```plaintext
 --cluster, -c    Cluster to use (overrides default_cluster)
 --json           Output as JSON
 --yaml           Output as YAML

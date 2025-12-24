@@ -115,7 +115,7 @@ ExecStart=/bin/bash -c '/usr/local/bin/slurmq report --format csv -o /var/log/sl
 
 Rotate slurmq logs:
 
-```
+```plaintext
 # /etc/logrotate.d/slurmq
 /var/log/slurmq/*.log {
     daily

@@ -64,7 +64,7 @@ Show when quota will free up:
 slurmq check --forecast
 ```
 
-```
+```console
 ╭─────────── Quota Forecast ───────────╮
 │  Time     Available    % Available   │
 │  +12h     78.5         15.7%         │

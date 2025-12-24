@@ -6,7 +6,7 @@ All configuration values can be overridden with environment variables.
 
 Environment variables use the `SLURMQ_` prefix with double underscores for nesting:
 
-```
+```plaintext
 SLURMQ_<KEY>
 SLURMQ_<SECTION>__<KEY>
 ```
@@ -18,7 +18,7 @@ SLURMQ_<SECTION>__<KEY>
 | Variable                 | Description          | Example                   |
 | ------------------------ | -------------------- | ------------------------- |
 | `SLURMQ_CONFIG`          | Path to config file  | `/etc/slurmq/config.toml` |
-| `SLURMQ_DEFAULT_CLUSTER` | Default cluster name | `stella`                   |
+| `SLURMQ_DEFAULT_CLUSTER` | Default cluster name | `stella`                  |
 
 ### Monitoring
 

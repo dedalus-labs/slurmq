@@ -100,7 +100,7 @@ Look for issues labeled `good first issue` to get started.
 
 ## Links
 
-| Resource | Description |
-|----------|-------------|
-| [SECURITY.md](SECURITY.md) | Reporting vulnerabilities |
-| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards |
+| Resource                                 | Description               |
+| ---------------------------------------- | ------------------------- |
+| [SECURITY.md](SECURITY.md)               | Reporting vulnerabilities |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community standards       |

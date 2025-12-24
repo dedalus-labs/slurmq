@@ -67,4 +67,4 @@ slurmq follows the Unix philosophy:
 - [`llms.txt`](https://dedalus-labs.github.io/slurmq/llms.txt)
 - [`llms-full.txt`](https://dedalus-labs.github.io/slurmq/llms-full.txt)
 
-**Viewing locally:** `uv sync --extra docs && uv run mkdocs serve` → [localhost:8000](http://127.0.0.1:8000)
+**Viewing locally:** `uv sync --extra docs && uv run mkdocs serve` -> [localhost:8000](http://127.0.0.1:8000)
