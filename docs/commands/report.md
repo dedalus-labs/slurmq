@@ -29,7 +29,7 @@ slurmq report
 Output:
 
 ```console
-        GPU Usage Report - Della (normal)
+        GPU Usage Report: Stella (normal)
 ┏━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┓
 ┃ User    ┃ Used (GPU-h)┃ Remaining ┃ Usage % ┃ Status ┃ Active ┃
 ┡━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━╇━━━━━━━━┩
@@ -68,7 +68,7 @@ slurmq report --account research-gpu
 
 ```json
 {
-  "cluster": "Della",
+  "cluster": "Stella",
   "qos": "normal",
   "users": [
     {

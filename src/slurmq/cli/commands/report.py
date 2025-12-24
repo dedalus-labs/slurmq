@@ -189,7 +189,7 @@ def _format_csv(usages: list[UserUsage]) -> str:
 
 def _output_rich(usages: list[UserUsage], cluster_name: str, qos: str | None) -> None:
     """Output report with rich table."""
-    table = Table(title=f"GPU Usage Report - {cluster_name}" + (f" ({qos})" if qos else ""))
+    table = Table(title=f"GPU Usage Report: {cluster_name}" + (f" ({qos})" if qos else ""))
 
     table.add_column("User", style="cyan")
     table.add_column("Used (GPU-hrs)", justify="right")

@@ -125,7 +125,7 @@ The live dashboard shows:
 
 ```console
 ┌─────────────────── slurmq monitor ───────────────────┐
-│  Cluster: Della    QoS: normal    Refresh: 30s       │
+│  Cluster: Stella   QoS: normal    Refresh: 30s       │
 ├──────────────────────────────────────────────────────┤
 │  User     Used      Remaining   Status   Active      │
 │  alice    487.5     12.5        ! WARN   3           │

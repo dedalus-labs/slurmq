@@ -261,7 +261,7 @@ def _output_json(statuses: list[UserStatus]) -> None:
 
 def _output_table(statuses: list[UserStatus], cluster_name: str) -> None:
     """Output status as rich table."""
-    table = Table(title=f"Active Users - {cluster_name}")
+    table = Table(title=f"Active Users: {cluster_name}")
 
     table.add_column("User", style="cyan")
     table.add_column("Used (GPU-hrs)", justify="right")
