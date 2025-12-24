@@ -3,8 +3,11 @@
 
 """Quota checking and Slurm interaction.
 
+GPU-hours are allocation-based (reserved time × GPUs), not actual utilization.
+This matches standard HPC billing semantics.
+
 This module handles:
-- QuotaChecker: Calculating GPU-hours and generating usage reports
+- QuotaChecker: Calculating allocated GPU-hours and generating usage reports
 - fetch_user_jobs: Querying sacct for job data
 - cancel_job: Cancelling jobs for enforcement
 """
@@ -25,10 +28,13 @@ __all__ = ["QuotaChecker", "cancel_job", "fetch_user_jobs"]
 
 
 class QuotaChecker:
-    """Checks GPU quota usage against cluster configuration."""
+    """Checks allocated GPU-hours against cluster quota configuration."""
 
     def __init__(
-        self, cluster: ClusterConfig, warning_threshold: float = 0.8, critical_threshold: float = 1.0
+        self,
+        cluster: ClusterConfig,
+        warning_threshold: float = 0.8,
+        critical_threshold: float = 1.0,
     ) -> None:
         """Initialize QuotaChecker.
 
@@ -43,13 +49,13 @@ class QuotaChecker:
         self.critical_threshold = critical_threshold
 
     def calculate_gpu_hours(self, records: list[JobRecord]) -> float:
-        """Calculate total GPU-hours from job records.
+        """Calculate total allocated GPU-hours from job records.
 
         Args:
             records: List of job records
 
         Returns:
-            Total GPU-hours
+            Total allocated GPU-hours
 
         """
         return sum(record.gpu_hours for record in records)
@@ -196,8 +202,10 @@ def fetch_user_jobs(
     cmd = [
         "sacct",
         "-X",  # Allocations only - skip job steps
-        f"-S=now-{window_days}days",  # Slurm's nice relative time format
-        "-E=now",
+        "-S",
+        f"now-{window_days}days",  # Slurm relative time format
+        "-E",
+        "now",
         "--json",
     ]
 

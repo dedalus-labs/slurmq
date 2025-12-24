@@ -59,8 +59,8 @@ def fetch_partition_data(
     cmd = [
         "sacct",
         "-X",  # Allocations only
-        f"-S={start_date}",
-        f"-E={end_date}",
+        "-S", start_date,
+        "-E", end_date,
         "--allusers",
         "--json",
     ]
@@ -370,7 +370,7 @@ def _print_wait_table(
 ) -> None:
     """Print a wait time table for small or large jobs."""
     size_label = f"Small (≤{threshold:.0f} GPU-h)" if is_small else f"Large (>{threshold:.0f} GPU-h)"
-    table = Table(title=f"Wait Times - {size_label}", show_header=True, header_style="bold")
+    table = Table(title=f"Wait Times: {size_label}", show_header=True, header_style="bold")
     table.add_column("Partition/QoS")
     table.add_column("Median Wait", justify="right")
     table.add_column("Wait > 6h", justify="right")
