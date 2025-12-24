@@ -21,6 +21,10 @@ uv run ruff format src/slurmq/
 # Type check
 uv run ty check src/slurmq/
 
+# Pre-commit (install once, runs on each commit)
+uv run pre-commit install
+uv run pre-commit run --all-files
+
 # Docs (local preview)
 uv sync --extra docs
 uv run mkdocs serve          # http://127.0.0.1:8000
@@ -52,6 +56,8 @@ uv run mkdocs build --strict # build to site/
 | Constant | `SCREAMING_SNAKE` | `DEFAULT_QOS`       |
 | Private  | `_leading_under`  | `_parse_sacct_line` |
 
+Slurm is itself stylized as "Slurm", not SLURM.
+
 ## Key Files
 
 | Path                        | Purpose                      |
@@ -59,7 +65,7 @@ uv run mkdocs build --strict # build to site/
 | `src/slurmq/cli/main.py`    | Typer CLI entry point        |
 | `src/slurmq/cli/commands/`  | Command implementations      |
 | `src/slurmq/core/config.py` | Configuration and validation |
-| `src/slurmq/core/slurm.py`  | SLURM command execution      |
+| `src/slurmq/core/slurm.py`  | Slurm command execution      |
 | `src/slurmq/core/quota.py`  | GPU-hours calculation        |
 
 ## Don't
@@ -72,7 +78,7 @@ uv run mkdocs build --strict # build to site/
 
 ## Do
 
-- Test with mocked SLURM output (see `tests/` for patterns)
+- Test with mocked Slurm output (see `tests/` for patterns)
 - Validate config changes with `slurmq config validate`
 - Follow the existing error handling patterns
 - Fail explicitly rather than silently degrade
