@@ -33,7 +33,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-cov>=4.0", "ruff>=0.4", "ty>=0.0.6", "pre-commit>=4.0"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.4",
+    "ty>=0.0.6",
+    "pre-commit>=4.0",
+]
 docs = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
@@ -68,4 +74,7 @@ line-length = 119
 quote-style = "double"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "PIE"]
+select = ["E", "F", "I", "UP", "B", "SIM", "PIE", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
