@@ -133,6 +133,8 @@ nav:
       - Config File: reference/config-file.md
       - Exit Codes: reference/exit-codes.md
       - API Reference: reference/api.md
+  - Contributing:
+      - Conventional Commits: conventional-commits.md
 
 extra_css:
   - assets/theme.css

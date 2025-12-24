@@ -1,7 +1,5 @@
 # Contributing to slurmq
 
-Thanks for your interest in contributing! This guide will help you get started.
-
 ## Your First Pull Request
 
 ### 1. Fork the repository
@@ -51,7 +49,7 @@ git add .
 git commit -m "fix: correct quota calculation for multi-GPU jobs"
 ```
 
-The commit type (`fix:`, `feat:`, `docs:`) matters—it determines the version bump.
+The type prefix determines the version bump. See the [Conventional Commits guide](https://dedalus-labs.github.io/slurmq/conventional-commits/) for details.
 
 ### 7. Push to your fork
 

@@ -29,7 +29,7 @@ Include:
 
 - Python version (`python --version`)
 - slurmq version (`slurmq --version`)
-- SLURM version (`sinfo --version`)
+- Slurm version (`sinfo --version`)
 - Steps to reproduce
 - Expected vs actual behavior
 - Relevant logs/tracebacks

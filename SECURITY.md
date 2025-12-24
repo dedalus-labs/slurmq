@@ -17,18 +17,18 @@ We will acknowledge your report within 48 hours and provide a detailed response 
 
 ## Supported Versions
 
-| Version | Supported                   |
-| ------- | --------------------------- |
-| main    | Active development          |
-| < 1.0   | Pre-release, best-effort    |
+| Version | Supported                |
+| ------- | ------------------------ |
+| main    | Active development       |
+| < 1.0   | Pre-release, best-effort |
 
 ## Security Considerations
 
 slurmq handles:
 
 - **Config files**: Read from `~/.config/slurmq/config.toml` or `/etc/slurmq/config.toml`
-- **SLURM commands**: Executed via subprocess (no shell=True)
-- **User data**: Job IDs, usernames, GPU-hours from SLURM
+- **Slurm commands**: Executed via subprocess (no shell=True)
+- **User data**: Job IDs, usernames, GPU-hours from Slurm
 
 ### Best Practices for Admins
 

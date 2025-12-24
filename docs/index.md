@@ -1,8 +1,8 @@
 # slurmq
 
-**GPU quota management for SLURM clusters.**
+GPU quota management for Slurm clusters.
 
-Designed to be configurable, scriptable, and pleasant to use, **`slurmq`** helps HPC administrators and users track GPU usage, enforce quotas, and generate reports.
+`slurmq` helps HPC administrators and users track GPU usage, enforce quotas, and generate reports.
 
 ```console
 $ slurmq check
