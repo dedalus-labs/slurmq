@@ -88,7 +88,7 @@ Define cluster profiles. You can have multiple clusters.
 | Key                   | Type   | Required | Description               |
 | --------------------- | ------ | -------- | ------------------------- |
 | `name`                | string | No       | Display name              |
-| `account`             | string | No       | SLURM account             |
+| `account`             | string | No       | Slurm account             |
 | `qos`                 | array  | No       | List of QoS names         |
 | `partitions`          | array  | No       | List of partitions        |
 | `quota_limit`         | int    | Yes      | GPU-hours quota           |

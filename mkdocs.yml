@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 site_name: slurmq
-site_description: GPU quota management for SLURM clusters
+site_description: GPU quota management for Slurm clusters
 site_url: https://dedalus-labs.github.io/slurmq
 repo_url: https://github.com/dedalus-labs/slurmq
 repo_name: dedalus-labs/slurmq
@@ -48,10 +48,12 @@ theme:
 
 plugins:
   - search
+  - git-revision-date-localized:
+      timezone: UTC
   - llmstxt:
       full_output: llms-full.txt
       markdown_description: |
-        slurmq is a CLI tool for GPU quota management on SLURM clusters. It helps HPC
+        slurmq is a CLI tool for GPU quota management on Slurm clusters. It helps HPC
         administrators and users track GPU usage, enforce quotas, and generate reports.
 
         Key features: quota checking, multi-cluster support, configurable via TOML,
@@ -88,6 +90,7 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - pymdownx.magiclink
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
@@ -138,6 +141,8 @@ extra:
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/dedalus-labs/slurmq
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/slurmq/
 
 validation:
   omitted_files: warn

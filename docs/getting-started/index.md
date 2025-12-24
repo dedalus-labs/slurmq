@@ -1,6 +1,6 @@
 # Getting Started
 
-Set up slurmq on your SLURM cluster.
+Set up slurmq on your Slurm cluster.
 
 | Guide                             | Description                              |
 | --------------------------------- | ---------------------------------------- |

@@ -3,7 +3,7 @@
 ## Requirements
 
 - Python 3.11+
-- SLURM with `sacct` command available
+- Slurm with `sacct` command available
 
 ## Install with uv (recommended)
 

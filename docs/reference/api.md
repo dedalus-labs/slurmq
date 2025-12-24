@@ -7,27 +7,23 @@ Python API for programmatic usage.
 ### Configuration
 
 ::: slurmq.core.config.SlurmqConfig
-    options:
-      show_source: false
-      members:
-        - clusters
-        - default_cluster
-        - monitoring
-        - enforcement
+options:
+show_source: false
+members: - clusters - default_cluster - monitoring - enforcement
 
 ### Quota checking
 
 ::: slurmq.core.quota.QuotaChecker
-    options:
-      show_source: false
+options:
+show_source: false
 
 ::: slurmq.core.quota.JobRecord
-    options:
-      show_source: false
+options:
+show_source: false
 
 ::: slurmq.core.quota.UsageReport
-    options:
-      show_source: false
+options:
+show_source: false
 
 ## Usage example
 
@@ -46,4 +42,3 @@ report = checker.get_user_usage("alice")
 print(f"Used: {report.used_hours:.1f} GPU-hours")
 print(f"Remaining: {report.remaining_hours:.1f} GPU-hours")
 ```
-

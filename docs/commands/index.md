@@ -46,5 +46,5 @@ These options work with all commands:
 | Code | Meaning                         |
 | ---- | ------------------------------- |
 | 0    | Success                         |
-| 1    | Error (config, SLURM, etc.)     |
+| 1    | Error (config, Slurm, etc.)     |
 | 2    | Quota exceeded (with `--quiet`) |

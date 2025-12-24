@@ -7,7 +7,7 @@ slurmq uses standard exit codes for scripting.
 | Code | Meaning        | When                                   |
 | ---- | -------------- | -------------------------------------- |
 | 0    | Success        | Command completed successfully         |
-| 1    | Error          | Configuration error, SLURM error, etc. |
+| 1    | Error          | Configuration error, Slurm error, etc. |
 | 2    | Quota exceeded | With `--quiet` flag only               |
 
 ## Usage in scripts

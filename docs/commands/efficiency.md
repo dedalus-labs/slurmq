@@ -1,6 +1,6 @@
 # efficiency
 
-Analyze job resource efficiency (like SLURM's `seff`).
+Analyze job resource efficiency (inspired by Slurm's `seff`).
 
 ## Usage
 
@@ -12,7 +12,7 @@ slurmq efficiency <JOB_ID>
 
 | Argument | Description             |
 | -------- | ----------------------- |
-| `JOB_ID` | SLURM job ID to analyze |
+| `JOB_ID` | Slurm job ID to analyze |
 
 ## Examples
 
