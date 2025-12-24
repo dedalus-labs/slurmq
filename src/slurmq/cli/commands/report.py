@@ -48,8 +48,8 @@ class UserUsage:
 def aggregate_by_user(records: list[JobRecord], cluster: ClusterConfig, checker: QuotaChecker) -> list[UserUsage]:
     """Aggregate job records by user."""
     users: dict[str, list[JobRecord]] = {}
-    for r in records:
-        users.setdefault(r.user, []).append(r)
+    for record in records:
+        users.setdefault(record.user, []).append(record)
 
     results = []
     for user, user_records in users.items():
@@ -104,7 +104,7 @@ def report(
     # Filter by QoS if needed (for post-filtering when sacct doesn't filter)
     target_qos = qos or (cluster.qos[0] if cluster.qos else None)
     if target_qos:
-        records = [r for r in records if r.qos == target_qos]
+        records = [record for record in records if record.qos == target_qos]
 
     # Create checker and aggregate
     checker = QuotaChecker(
@@ -138,16 +138,16 @@ def _format_json(usages: list[UserUsage], cluster_name: str, qos: str | None) ->
         "qos": qos,
         "users": [
             {
-                "user": u.user,
-                "used_gpu_hours": round(u.used_gpu_hours, 2),
-                "quota_limit": u.quota_limit,
-                "remaining_gpu_hours": round(u.remaining_gpu_hours, 2),
-                "usage_percentage": round(u.usage_percentage * 100, 1),
-                "status": u.status.value,
-                "active_jobs": u.active_jobs,
-                "total_jobs": u.total_jobs,
+                "user": usage.user,
+                "used_gpu_hours": round(usage.used_gpu_hours, 2),
+                "quota_limit": usage.quota_limit,
+                "remaining_gpu_hours": round(usage.remaining_gpu_hours, 2),
+                "usage_percentage": round(usage.usage_percentage * 100, 1),
+                "status": usage.status.value,
+                "active_jobs": usage.active_jobs,
+                "total_jobs": usage.total_jobs,
             }
-            for u in usages
+            for usage in usages
         ],
     }
     return json.dumps(data, indent=2)
@@ -170,17 +170,17 @@ def _format_csv(usages: list[UserUsage]) -> str:
         ],
     )
     writer.writeheader()
-    for u in usages:
+    for usage in usages:
         writer.writerow(
             {
-                "user": u.user,
-                "used_gpu_hours": round(u.used_gpu_hours, 2),
-                "quota_limit": u.quota_limit,
-                "remaining_gpu_hours": round(u.remaining_gpu_hours, 2),
-                "usage_percentage": round(u.usage_percentage * 100, 1),
-                "status": u.status.value,
-                "active_jobs": u.active_jobs,
-                "total_jobs": u.total_jobs,
+                "user": usage.user,
+                "used_gpu_hours": round(usage.used_gpu_hours, 2),
+                "quota_limit": usage.quota_limit,
+                "remaining_gpu_hours": round(usage.remaining_gpu_hours, 2),
+                "usage_percentage": round(usage.usage_percentage * 100, 1),
+                "status": usage.status.value,
+                "active_jobs": usage.active_jobs,
+                "total_jobs": usage.total_jobs,
             }
         )
     return output.getvalue()
@@ -199,17 +199,17 @@ def _output_rich(usages: list[UserUsage], cluster_name: str, qos: str | None) ->
 
     status_styles = {QuotaStatus.OK: "green", QuotaStatus.WARNING: "yellow", QuotaStatus.EXCEEDED: "red"}
 
-    for u in usages:
-        style = status_styles[u.status]
-        status_icon = {"ok": "ok", "warning": "!", "exceeded": "x"}[u.status.value]
+    for usage in usages:
+        style = status_styles[usage.status]
+        status_icon = {"ok": "ok", "warning": "!", "exceeded": "x"}[usage.status.value]
 
         table.add_row(
-            u.user,
-            f"{u.used_gpu_hours:.1f}",
-            f"[{style}]{u.remaining_gpu_hours:.1f}[/{style}]",
-            f"[{style}]{u.usage_percentage * 100:.0f}%[/{style}]",
+            usage.user,
+            f"{usage.used_gpu_hours:.1f}",
+            f"[{style}]{usage.remaining_gpu_hours:.1f}[/{style}]",
+            f"[{style}]{usage.usage_percentage * 100:.0f}%[/{style}]",
             f"[{style}]{status_icon}[/{style}]",
-            str(u.active_jobs) if u.active_jobs > 0 else "-",
+            str(usage.active_jobs) if usage.active_jobs > 0 else "-",
         )
 
     console.print(table)

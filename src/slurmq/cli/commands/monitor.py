@@ -73,8 +73,8 @@ def get_all_user_statuses(
 
     # Group by user
     users: dict[str, list[JobRecord]] = {}
-    for r in records:
-        users.setdefault(r.user, []).append(r)
+    for record in records:
+        users.setdefault(record.user, []).append(record)
 
     results = []
     now = time.time()
@@ -83,7 +83,7 @@ def get_all_user_statuses(
         report = checker.generate_report(user, user_records)
 
         # Check if user has active jobs
-        active = [r for r in user_records if r.is_running]
+        active = [record for record in user_records if record.is_running]
         if not active:
             continue
 
@@ -243,16 +243,16 @@ def _output_json(statuses: list[UserStatus]) -> None:
     data = {
         "users": [
             {
-                "user": s.user,
-                "used_gpu_hours": round(s.used_gpu_hours, 2),
-                "remaining_gpu_hours": round(s.remaining_gpu_hours, 2),
-                "usage_percentage": round(s.usage_percentage * 100, 1),
-                "status": s.status.value,
-                "active_jobs": len(s.active_jobs),
-                "in_grace_period": s.in_grace_period,
-                "exceeded_at": s.exceeded_at,
+                "user": status.user,
+                "used_gpu_hours": round(status.used_gpu_hours, 2),
+                "remaining_gpu_hours": round(status.remaining_gpu_hours, 2),
+                "usage_percentage": round(status.usage_percentage * 100, 1),
+                "status": status.status.value,
+                "active_jobs": len(status.active_jobs),
+                "in_grace_period": status.in_grace_period,
+                "exceeded_at": status.exceeded_at,
             }
-            for s in statuses
+            for status in statuses
         ]
     }
     console.print(json.dumps(data, indent=2))
@@ -272,17 +272,17 @@ def _output_table(statuses: list[UserStatus], cluster_name: str) -> None:
     status_styles = {QuotaStatus.OK: "green", QuotaStatus.WARNING: "yellow", QuotaStatus.EXCEEDED: "red"}
     status_icons = {"ok": "ok", "warning": "!", "exceeded": "x"}
 
-    for s in statuses:
-        style = status_styles[s.status]
-        icon = status_icons[s.status.value]
+    for user_status in statuses:
+        style = status_styles[user_status.status]
+        icon = status_icons[user_status.status.value]
 
         table.add_row(
-            s.user,
-            f"{s.used_gpu_hours:.1f}",
-            f"[{style}]{s.remaining_gpu_hours:.1f}[/{style}]",
-            f"[{style}]{s.usage_percentage * 100:.0f}%[/{style}]",
+            user_status.user,
+            f"{user_status.used_gpu_hours:.1f}",
+            f"[{style}]{user_status.remaining_gpu_hours:.1f}[/{style}]",
+            f"[{style}]{user_status.usage_percentage * 100:.0f}%[/{style}]",
             f"[{style}]{icon}[/{style}]",
-            str(len(s.active_jobs)),
+            str(len(user_status.active_jobs)),
         )
 
     console.print(table)

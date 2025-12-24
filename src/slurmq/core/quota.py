@@ -330,7 +330,7 @@ class QuotaChecker:
         """
         days = window_days if window_days is not None else self.cluster.rolling_window_days
         cutoff = datetime.now(tz=UTC) - timedelta(days=days)
-        return [r for r in records if r.start_time >= cutoff]
+        return [record for record in records if record.start_time >= cutoff]
 
     def filter_by_qos(self, records: list[JobRecord], qos: str | None = None) -> list[JobRecord]:
         """Filter records by QoS.
@@ -343,7 +343,7 @@ class QuotaChecker:
             Records matching the QoS
         """
         target_qos = qos if qos is not None else self.cluster.qos[0]
-        return [r for r in records if r.qos == target_qos]
+        return [record for record in records if record.qos == target_qos]
 
     def generate_report(self, user: str, records: list[JobRecord], qos: str | None = None) -> UsageReport:
         """Generate a usage report for a user.
@@ -359,12 +359,12 @@ class QuotaChecker:
         target_qos = qos if qos is not None else self.cluster.qos[0]
 
         # Filter to user's jobs in the rolling window for the target QoS
-        user_records = [r for r in records if r.user == user]
+        user_records = [record for record in records if record.user == user]
         windowed = self.filter_by_window(user_records)
         qos_filtered = self.filter_by_qos(windowed, target_qos)
 
         used_hours = self.calculate_gpu_hours(qos_filtered)
-        active = [r for r in qos_filtered if r.is_running]
+        active = [record for record in qos_filtered if record.is_running]
 
         return UsageReport(
             user=user,
@@ -399,7 +399,7 @@ class QuotaChecker:
             hours_ahead = [12, 24, 72, 168]
 
         target_qos = qos if qos is not None else self.cluster.qos[0]
-        user_records = [r for r in records if r.user == user]
+        user_records = [record for record in records if record.user == user]
         qos_filtered = self.filter_by_qos(user_records, target_qos)
 
         forecast: dict[int, float] = {}
@@ -410,7 +410,7 @@ class QuotaChecker:
             future_cutoff = datetime.now(tz=UTC) + timedelta(hours=hours) - timedelta(days=window_days)
 
             # Sum GPU-hours for jobs that will still be in window at that time
-            future_records = [r for r in qos_filtered if r.start_time >= future_cutoff]
+            future_records = [record for record in qos_filtered if record.start_time >= future_cutoff]
             future_usage = self.calculate_gpu_hours(future_records)
             forecast[hours] = self.cluster.quota_limit - future_usage
 
