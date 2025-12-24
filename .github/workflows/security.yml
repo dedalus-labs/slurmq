@@ -1,0 +1,74 @@
+# Copyright (c) 2025 Dedalus Labs, Inc. and its contributors
+# SPDX-License-Identifier: MIT
+# -----------------------------------------------------------------------------
+# File: .github/workflows/security.yml
+# Purpose: Security scanning (Gitleaks, Trivy).
+# -----------------------------------------------------------------------------
+---
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      deps: ${{ steps.filter.outputs.deps }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            deps:
+              - "pyproject.toml"
+              - "uv.lock"
+              - ".github/workflows/security.yml"
+
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+  trivy:
+    name: Trivy
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.deps == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@0.18.0
+        with:
+          scanners: vuln
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"

@@ -1,0 +1,142 @@
+/* Dedalus Labs brand theme for MkDocs Material */
+
+:root {
+  /* Brand colors */
+  --dedalus-gold: #FFAF01;
+  --dedalus-gold-light: #FDCD35;
+  --dedalus-olive: #5F5023;
+  --dedalus-charcoal: #141414;
+  --dedalus-gray: #C4C4C4;
+  --dedalus-purple: #7C3AED;
+}
+
+/* Light theme */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: var(--dedalus-charcoal);
+  --md-primary-bg-color: #FFFFFF;
+  --md-accent-fg-color: var(--dedalus-gold);
+  --md-accent-bg-color: var(--dedalus-gold-light);
+
+  /* Text */
+  --md-default-fg-color: #1C1917;
+  --md-default-fg-color--light: #44403C;
+  --md-default-fg-color--lighter: #78716C;
+  --md-default-bg-color: #FAFAF9;
+
+  /* Links */
+  --md-typeset-a-color: var(--dedalus-olive);
+
+  /* Code */
+  --md-code-bg-color: #F5F5F4;
+  --md-code-fg-color: #1C1917;
+
+  /* Admonitions */
+  --md-admonition-bg-color: #FAFAF9;
+}
+
+/* Dark theme */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: var(--dedalus-charcoal);
+  --md-primary-bg-color: var(--dedalus-gold);
+  --md-accent-fg-color: var(--dedalus-gold);
+  --md-accent-bg-color: var(--dedalus-olive);
+
+  /* Text */
+  --md-default-fg-color: #FAFAF9;
+  --md-default-fg-color--light: #D6D3D1;
+  --md-default-fg-color--lighter: #A8A29E;
+  --md-default-bg-color: var(--dedalus-charcoal);
+
+  /* Links */
+  --md-typeset-a-color: var(--dedalus-gold);
+
+  /* Code */
+  --md-code-bg-color: #1C1917;
+  --md-code-fg-color: #FAFAF9;
+
+  /* Header */
+  --md-primary-fg-color: #1C1917;
+  --md-primary-bg-color: var(--dedalus-gold);
+}
+
+/* Header styling - gold bar on dark, charcoal on light */
+[data-md-color-scheme="slate"] .md-header {
+  background-color: var(--dedalus-gold);
+  color: var(--dedalus-charcoal);
+}
+
+[data-md-color-scheme="slate"] .md-header a {
+  color: var(--dedalus-charcoal);
+}
+
+/* Darken logo on gold header in dark mode */
+[data-md-color-scheme="slate"] .md-header .md-header__button.md-logo img,
+[data-md-color-scheme="slate"] .md-header .md-header__button.md-logo svg {
+  filter: brightness(0.15);
+}
+
+/* Ensure header icons are visible on gold background */
+[data-md-color-scheme="slate"] .md-header .md-header__button {
+  color: var(--dedalus-charcoal);
+}
+
+[data-md-color-scheme="slate"] .md-search__input {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: var(--dedalus-charcoal);
+}
+
+[data-md-color-scheme="slate"] .md-search__input::placeholder {
+  color: rgba(20, 20, 20, 0.6);
+}
+
+/* Nav tabs - subtle gold accent */
+.md-tabs {
+  background-color: inherit;
+}
+
+[data-md-color-scheme="slate"] .md-tabs__link--active {
+  color: var(--dedalus-gold);
+}
+
+/* Buttons and interactive elements */
+.md-button--primary {
+  background-color: var(--dedalus-gold);
+  border-color: var(--dedalus-gold);
+  color: var(--dedalus-charcoal);
+}
+
+.md-button--primary:hover {
+  background-color: var(--dedalus-gold-light);
+  border-color: var(--dedalus-gold-light);
+}
+
+/* Selection highlight */
+::selection {
+  background-color: var(--dedalus-gold-light);
+  color: var(--dedalus-charcoal);
+}
+
+/* Scrollbar (webkit) */
+::-webkit-scrollbar-thumb {
+  background-color: var(--dedalus-gray);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--dedalus-gold);
+}
+
+/* Purple accent for special callouts */
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: var(--dedalus-purple);
+}
+
+.md-typeset .tip > .admonition-title,
+.md-typeset .tip > summary {
+  background-color: rgba(124, 58, 237, 0.1);
+}
+
+.md-typeset .tip > .admonition-title::before,
+.md-typeset .tip > summary::before {
+  background-color: var(--dedalus-purple);
+}

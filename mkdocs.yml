@@ -1,0 +1,145 @@
+# Copyright (c) 2025 Dedalus Labs, Inc. and its contributors
+# SPDX-License-Identifier: MIT
+
+site_name: slurmq
+site_description: GPU quota management for SLURM clusters
+site_url: https://dedalus-labs.github.io/slurmq
+repo_url: https://github.com/dedalus-labs/slurmq
+repo_name: dedalus-labs/slurmq
+site_author: Dedalus Labs
+
+theme:
+  name: material
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/theme-light-dark
+        name: "Theme: auto (click for light)"
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-sunny
+        name: "Theme: light (click for dark)"
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: "Theme: dark (click for auto)"
+  features:
+    - navigation.path
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.progress
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - navigation.tracking
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+    - toc.follow
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - llmstxt:
+      full_output: llms-full.txt
+      markdown_description: |
+        slurmq is a CLI tool for GPU quota management on SLURM clusters. It helps HPC
+        administrators and users track GPU usage, enforce quotas, and generate reports.
+
+        Key features: quota checking, multi-cluster support, configurable via TOML,
+        JSON/CSV/YAML output, live monitoring dashboard, automated enforcement.
+      sections:
+        Getting started:
+          - getting-started/installation.md
+          - getting-started/quickstart.md
+          - getting-started/configuration.md
+        Commands:
+          - commands/check.md
+          - commands/stats.md
+          - commands/report.md
+          - commands/monitor.md
+          - commands/efficiency.md
+          - commands/config.md
+        Recipes:
+          - recipes/common.md
+          - recipes/scripting.md
+          - recipes/cron.md
+        Reference:
+          - reference/env-vars.md
+          - reference/config-file.md
+          - reference/exit-codes.md
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            show_root_heading: true
+            heading_level: 3
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.keys
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+      anchorlink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - getting-started/index.md
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Configuration: getting-started/configuration.md
+  - Commands:
+      - commands/index.md
+      - check: commands/check.md
+      - stats: commands/stats.md
+      - report: commands/report.md
+      - monitor: commands/monitor.md
+      - efficiency: commands/efficiency.md
+      - config: commands/config.md
+  - Recipes:
+      - recipes/index.md
+      - Common Patterns: recipes/common.md
+      - Scripting: recipes/scripting.md
+      - Cron Jobs: recipes/cron.md
+  - Reference:
+      - reference/index.md
+      - Environment Variables: reference/env-vars.md
+      - Config File: reference/config-file.md
+      - Exit Codes: reference/exit-codes.md
+      - API Reference: reference/api.md
+
+extra_css:
+  - assets/theme.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/dedalus-labs/slurmq
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn

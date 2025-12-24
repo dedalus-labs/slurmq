@@ -1,0 +1,58 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "schedule:weekly",
+    ":semanticCommits",
+    ":automergeMinor",
+    ":automergePatch"
+  ],
+  "baseBranches": ["main"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "matchManagers": ["uv"],
+      "matchDepTypes": ["project.dependencies"],
+      "groupName": "python-runtime",
+      "commitMessagePrefix": "deps(runtime):",
+      "automerge": false
+    },
+    {
+      "matchManagers": ["uv"],
+      "matchPackageNames": ["typer", "rich"],
+      "groupName": "python-cli",
+      "commitMessagePrefix": "deps(cli):",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["uv"],
+      "matchPackagePatterns": ["^pytest"],
+      "groupName": "python-test",
+      "commitMessagePrefix": "deps(test):",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["uv"],
+      "matchPackageNames": ["ruff", "ty"],
+      "groupName": "python-lint",
+      "commitMessagePrefix": "deps(lint):",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "commitMessagePrefix": "ci:",
+      "automerge": true,
+      "automergeType": "branch"
+    }
+  ],
+  "ignoreDeps": ["ty"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"],
+    "commitMessagePrefix": "chore:"
+  },
+  "prHourlyLimit": 3,
+  "prConcurrentLimit": 5,
+  "platformAutomerge": true
+}

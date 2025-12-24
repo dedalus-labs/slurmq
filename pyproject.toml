@@ -1,0 +1,70 @@
+[project]
+name = "slurmq"
+version = "0.0.1" # x-release-please-version
+description = "Slurm GPU quota monitoring and management"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "Dedalus Labs", email = "oss@dedaluslabs.ai" }]
+keywords = ["slurm", "hpc", "gpu", "quota", "monitoring"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: System :: Clustering",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.0",
+    "textual>=0.50",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "tomli-w>=1.0",
+    "pandas>=2.0",
+    "tabulate>=0.9",
+    "platformdirs>=4.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-cov>=4.0", "ruff>=0.4", "ty"]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+    "mkdocs-llmstxt>=0.2",
+    "pymdown-extensions>=10.0",
+]
+
+[project.scripts]
+slurmq = "slurmq.cli.main:run"
+
+[project.urls]
+Homepage = "https://github.com/dedalus-labs/slurmq"
+Documentation = "https://dedalus-labs.github.io/slurmq"
+Repository = "https://github.com/dedalus-labs/slurmq.git"
+Issues = "https://github.com/dedalus-labs/slurmq/issues"
+
+[build-system]
+requires = ["uv_build>=0.9.18,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 119
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "PIE"]

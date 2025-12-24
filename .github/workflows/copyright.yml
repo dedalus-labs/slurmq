@@ -1,0 +1,49 @@
+# Copyright (c) 2025 Dedalus Labs, Inc. and its contributors
+# SPDX-License-Identifier: MIT
+---
+name: Copyright Headers
+
+on:
+  pull_request:
+    paths:
+      - "**.py"
+      - "scripts/**.sh"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  add-copyright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add missing copyright headers
+        run: |
+          chmod +x scripts/add_copyright.sh
+          ./scripts/add_copyright.sh
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "✅ All files already have copyright headers"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "📝 Added copyright headers to:"
+            git diff --name-only
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: add copyright headers"
+          git push

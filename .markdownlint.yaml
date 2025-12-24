@@ -1,0 +1,42 @@
+# Markdown linting configuration
+# https://github.com/DavidAnson/markdownlint
+
+default: true
+
+# Line length - disabled for docs with tables and code
+MD013: false
+
+# Allow duplicate headings in different sections
+MD024:
+  siblings_only: true
+
+# Allow trailing punctuation in headings (for "?" in FAQs)
+MD026:
+  punctuation: ".,;:!"
+
+# Allow inline HTML (for admonitions, tabs, etc.)
+MD033: false
+
+# Allow bare URLs (common in docs)
+MD034: false
+
+# Allow emphasis used instead of headings
+MD036: false
+
+# Code block style
+MD046:
+  style: fenced
+
+# Code fence style
+MD048:
+  style: backtick
+
+# Allow multiple blanks in code blocks
+MD012:
+  maximum: 2
+
+# First line should be top-level heading
+MD041: true
+
+# Link fragments should be valid
+MD051: true
