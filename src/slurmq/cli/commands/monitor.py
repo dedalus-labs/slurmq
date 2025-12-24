@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -194,7 +195,7 @@ def _run_once(cli_ctx: CLIContext, cluster, enforce: bool) -> None:
     # Fetch all jobs
     try:
         records = fetch_user_jobs("ALL", cluster, all_users=True)
-    except Exception as e:
+    except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
         console.print(f"[red]Error fetching Slurm data:[/red] {e}")
         raise typer.Exit(1) from None
 
@@ -324,7 +325,8 @@ def _run_tui(cli_ctx: CLIContext, cluster, enforce: bool, interval: int) -> None
                         for user, job_id, action in actions[:5]:  # Show first 5
                             console.print(f"  {action}: job {job_id} ({user})")
 
-            except Exception as e:
+            except (subprocess.CalledProcessError, json.JSONDecodeError, OSError) as e:
+                # Transient errors - continue monitoring
                 console.print(f"[red]Error:[/red] {e}")
 
             time.sleep(interval)

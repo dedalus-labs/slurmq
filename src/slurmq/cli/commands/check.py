@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 from typing import TYPE_CHECKING
 
 import typer
@@ -103,11 +104,11 @@ def check(
         records = fetch_user_jobs(
             target_user, cluster, qos_override=qos, account_override=account, partition_override=partition
         )
-    except Exception as e:
+    except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
         if cli_ctx.json_output:
             console.print(json.dumps({"error": str(e)}))
         else:
-            console.print(f"[red]Error fetching SLURM data:[/red] {e}")
+            console.print(f"[red]Error fetching Slurm data:[/red] {e}")
         raise typer.Exit(1) from None
 
     # Generate report

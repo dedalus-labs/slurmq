@@ -8,6 +8,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -96,7 +97,7 @@ def report(
         records = fetch_user_jobs(
             "ALL", cluster, all_users=True, qos_override=qos, account_override=account, partition_override=partition
         )
-    except Exception as e:
+    except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
         console.print(f"[red]Error fetching Slurm data:[/red] {e}")
         raise typer.Exit(1) from None
 
