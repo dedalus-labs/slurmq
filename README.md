@@ -1,6 +1,6 @@
 # slurmq
 
-GPU quota management for SLURM clusters.
+GPU quota management for Slurm clusters.
 
 ```console
 $ slurmq check

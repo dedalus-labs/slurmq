@@ -92,8 +92,8 @@ If you use AI tools (Copilot, Claude, Cursor), mention it in your PR. You must u
 ## Areas Needing Help
 
 - **Documentation**: Improve README, add examples
-- **Testing**: Increase coverage, especially for SLURM edge cases
-- **Clusters**: Test on different SLURM configurations
+- **Testing**: Increase coverage, especially for Slurm edge cases
+- **Clusters**: Test on different Slurm configurations
 - **Features**: New monitoring capabilities
 
 Look for issues labeled `good first issue` to get started.
