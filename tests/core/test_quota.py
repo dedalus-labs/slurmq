@@ -131,7 +131,7 @@ class TestJobState:
     """Tests for JobState enum."""
 
     def test_parse_full_state_names(self) -> None:
-        """Can parse full SLURM state names."""
+        """Can parse full Slurm state names."""
         assert JobState.from_slurm("COMPLETED") == JobState.COMPLETED
         assert JobState.from_slurm("RUNNING") == JobState.RUNNING
         assert JobState.from_slurm("PENDING") == JobState.PENDING
@@ -140,7 +140,7 @@ class TestJobState:
         assert JobState.from_slurm("OUT_OF_MEMORY") == JobState.OUT_OF_MEMORY
 
     def test_parse_abbreviations(self) -> None:
-        """Can parse SLURM state abbreviations."""
+        """Can parse Slurm state abbreviations."""
         assert JobState.from_slurm("CD") == JobState.COMPLETED
         assert JobState.from_slurm("R") == JobState.RUNNING
         assert JobState.from_slurm("PD") == JobState.PENDING
@@ -328,7 +328,7 @@ class TestQuotaChecker:
 
 
 class TestQuotaCheckerWithMockedSlurm:
-    """Tests that mock SLURM commands."""
+    """Tests that mock Slurm commands."""
 
     @pytest.fixture
     def mock_sacct(self, monkeypatch: MonkeyPatch) -> None:

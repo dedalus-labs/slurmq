@@ -91,7 +91,7 @@ def init(ctx: typer.Context) -> None:
     # Gather cluster info
     cluster_id = Prompt.ask("Cluster ID (short name, e.g., 'stella')", default="stella")
     cluster_name = Prompt.ask("Cluster display name", default=cluster_id.title())
-    account = Prompt.ask("SLURM account name", default="")
+    account = Prompt.ask("Slurm account name", default="")
     qos = Prompt.ask("QoS (comma-separated if multiple)", default="normal")
     quota_limit = IntPrompt.ask("GPU-hours quota limit", default=500)
     rolling_window = IntPrompt.ask("Rolling window (days)", default=30)

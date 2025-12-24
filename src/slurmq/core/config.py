@@ -56,7 +56,7 @@ def _load_toml_raw(path: Path) -> dict[str, Any]:
 
 
 class ClusterConfig(BaseModel):
-    """Configuration for a single SLURM cluster."""
+    """Configuration for a single Slurm cluster."""
 
     name: str
     account: str = ""

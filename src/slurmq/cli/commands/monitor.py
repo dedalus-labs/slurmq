@@ -160,7 +160,7 @@ def check_enforcement(
 
 
 def _cancel_job(job_id: int) -> None:
-    """Cancel a SLURM job."""
+    """Cancel a Slurm job."""
     cancel_job(job_id, quiet=True)  # quiet=True handles race conditions
 
 
@@ -195,7 +195,7 @@ def _run_once(cli_ctx: CLIContext, cluster, enforce: bool) -> None:
     try:
         records = fetch_user_jobs("ALL", cluster, all_users=True)
     except Exception as e:
-        console.print(f"[red]Error fetching SLURM data:[/red] {e}")
+        console.print(f"[red]Error fetching Slurm data:[/red] {e}")
         raise typer.Exit(1) from None
 
     checker = QuotaChecker(

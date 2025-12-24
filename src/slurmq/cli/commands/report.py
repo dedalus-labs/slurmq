@@ -97,7 +97,7 @@ def report(
             "ALL", cluster, all_users=True, qos_override=qos, account_override=account, partition_override=partition
         )
     except Exception as e:
-        console.print(f"[red]Error fetching SLURM data:[/red] {e}")
+        console.print(f"[red]Error fetching Slurm data:[/red] {e}")
         raise typer.Exit(1) from None
 
     # Filter by QoS if needed (for post-filtering when sacct doesn't filter)

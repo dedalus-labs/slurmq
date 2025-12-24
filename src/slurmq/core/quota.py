@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Dedalus Labs, Inc. and its contributors
 # SPDX-License-Identifier: MIT
 
-"""Quota calculation and checking for SLURM GPU usage.
+"""Quota calculation and checking for Slurm GPU usage.
 
 This module handles:
 - Parsing sacct output to extract job records
@@ -23,7 +23,7 @@ from .config import ClusterConfig
 
 
 class JobState(StrEnum):
-    """SLURM job states with metadata about severity."""
+    """Slurm job states with metadata about severity."""
 
     # Normal states
     COMPLETED = "COMPLETED"
@@ -50,7 +50,7 @@ class JobState(StrEnum):
 
     @classmethod
     def from_slurm(cls, state_str: str) -> JobState:
-        """Parse SLURM state string (handles abbreviations)."""
+        """Parse Slurm state string (handles abbreviations)."""
         # Map abbreviations to full names
         abbrevs = {
             "BF": cls.BOOT_FAIL,
@@ -156,7 +156,7 @@ class QuotaStatus(StrEnum):
 
 @dataclass
 class JobRecord:
-    """A single SLURM job record."""
+    """A single Slurm job record."""
 
     job_id: int
     name: str
@@ -424,7 +424,7 @@ def fetch_user_jobs(
     account_override: str | None = None,
     partition_override: str | None = None,
 ) -> list[JobRecord]:
-    """Fetch job records from SLURM for a user.
+    """Fetch job records from Slurm for a user.
 
     Args:
         user: Username to query (or "ALL" for all users)
@@ -444,15 +444,15 @@ def fetch_user_jobs(
     """
     # Build command with best-practice flags:
     # -X: allocations only (skip job steps for cleaner data)
-    # -S: start time using SLURM's relative time format
+    # -S: start time using Slurm's relative time format
     # -T: truncate times to window for accurate accounting
-    # --qos: filter at SLURM level (more efficient)
+    # --qos: filter at Slurm level (more efficient)
     # --json: structured output
     window_days = cluster.rolling_window_days
     cmd = [
         "sacct",
         "-X",  # Allocations only - skip job steps
-        f"-S=now-{window_days}days",  # SLURM's nice relative time format
+        f"-S=now-{window_days}days",  # Slurm's nice relative time format
         "-E=now",
         "--json",
     ]
@@ -490,7 +490,7 @@ def fetch_user_jobs(
 
 
 def cancel_job(job_id: int, quiet: bool = True) -> bool:
-    """Cancel a SLURM job.
+    """Cancel a Slurm job.
 
     Args:
         job_id: The job ID to cancel
