@@ -7,15 +7,15 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - 'src/**'  # API reference depends on source
+      - "docs/**"
+      - "mkdocs.yml"
+      - "src/**" # API reference depends on source
   pull_request:
     branches: [main]
     paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - 'src/**'
+      - "docs/**"
+      - "mkdocs.yml"
+      - "src/**"
   workflow_dispatch:
 
 permissions:
