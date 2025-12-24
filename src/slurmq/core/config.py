@@ -33,16 +33,19 @@ class TomlFileSettingsSource(PydanticBaseSettingsSource):
     """Custom settings source that loads from a TOML file."""
 
     def __init__(self, settings_cls: type[BaseSettings]) -> None:
+        """Load TOML config file if path is set."""
         super().__init__(settings_cls)
         self._data: dict[str, Any] = {}
         if _config_file_path is not None:
             self._data = _load_toml_raw(_config_file_path)
 
     def get_field_value(self, field: FieldInfo, field_name: str) -> tuple[Any, str, bool]:
+        """Return field value from loaded TOML data."""
         value = self._data.get(field_name)
         return value, field_name, value is not None
 
     def __call__(self) -> dict[str, Any]:
+        """Return all loaded TOML data."""
         return self._data
 
 

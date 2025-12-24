@@ -53,6 +53,7 @@ class CLIContext:
         verbose: bool = False,
         quiet: bool = False,
     ) -> None:
+        """Initialize CLI context with config and output settings."""
         self.config = config
         self.cluster_name = cluster
         self.output_format = output_format
@@ -66,7 +67,7 @@ class CLIContext:
 
     @property
     def json_output(self) -> bool:
-        """Backwards compat: check if JSON output is requested."""
+        """Check if JSON output is requested."""
         return self.output_format == OutputFormat.JSON
 
     @property
