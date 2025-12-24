@@ -1,42 +1,48 @@
+# Copyright (c) 2025 Dedalus Labs, Inc. and its contributors
+# SPDX-License-Identifier: MIT
+---
 # Markdown linting configuration
 # https://github.com/DavidAnson/markdownlint
 
 default: true
 
-# Line length - disabled for docs with tables and code
-MD013: false
+# MD007/unordered-list-indent
+MD007:
+  indent: 4
 
-# Allow duplicate headings in different sections
-MD024:
-  siblings_only: true
-
-# Allow trailing punctuation in headings (for "?" in FAQs)
-MD026:
-  punctuation: ".,;:!"
-
-# Allow inline HTML (for admonitions, tabs, etc.)
-MD033: false
-
-# Allow bare URLs (common in docs)
-MD034: false
-
-# Allow emphasis used instead of headings
-MD036: false
-
-# Code block style
-MD046:
-  style: fenced
-
-# Code fence style
-MD048:
-  style: backtick
-
-# Allow multiple blanks in code blocks
+# MD012/no-multiple-blanks
 MD012:
   maximum: 2
 
-# First line should be top-level heading
-MD041: true
+# MD013/line-length - disabled for docs with tables and code
+MD013: false
 
-# Link fragments should be valid
-MD051: true
+# MD024/no-duplicate-heading - allow under different parents (e.g. CHANGELOG)
+MD024:
+  siblings_only: true
+
+# MD026/no-trailing-punctuation - allow ? for FAQs
+MD026:
+  punctuation: ".,;:!"
+
+# MD033/no-inline-html - allow for admonitions, tabs
+MD033: false
+
+# MD034/no-bare-urls - common in docs
+MD034: false
+
+# MD036/no-emphasis-as-heading
+MD036: false
+
+# MD041/first-line-h1
+MD041: false
+
+# MD046/code-block-style - disabled for mkdocs-material content tabs
+MD046: false
+
+# MD048/code-fence-style
+MD048:
+  style: backtick
+
+# MD059/link-text-descriptive - "here" links are sometimes fine
+MD059: false

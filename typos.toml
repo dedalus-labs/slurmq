@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Dedalus Labs, Inc. and its contributors
+# SPDX-License-Identifier: MIT
+
+# Typos configuration
+# https://github.com/crate-ci/typos
+
+[default.extend-words]
+# Slurm-specific terms
+sacct = "sacct"
+sacctmgr = "sacctmgr"
+scancel = "scancel"
+squeue = "squeue"
+sbatch = "sbatch"
+srun = "srun"
+
+[files]
+extend-exclude = ["uv.lock", "*.svg"]
