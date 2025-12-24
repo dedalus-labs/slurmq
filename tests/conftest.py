@@ -88,3 +88,18 @@ def config_file(tmp_path: Path, sample_config_toml: str) -> Path:
     config_path = tmp_path / "config.toml"
     config_path.write_text(sample_config_toml)
     return config_path
+
+
+@pytest.fixture
+def stella_cluster_config():
+    """Standard Stella cluster configuration for tests."""
+    from slurmq.core.config import ClusterConfig
+
+    return ClusterConfig(
+        name="Stella HPC",
+        account="research",
+        qos=["high-priority", "normal"],
+        partitions=["gpu"],
+        quota_limit=500,
+        rolling_window_days=30,
+    )
