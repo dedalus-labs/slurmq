@@ -8,6 +8,11 @@ name: Release
 on:
   push:
     branches: [main]
+    paths:
+      - "src/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      # Excludes: .github/**, docs/**, scripts/**, tests/**
 
 permissions:
   contents: write

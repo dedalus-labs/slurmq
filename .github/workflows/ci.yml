@@ -1,5 +1,6 @@
 # Copyright (c) 2025 Dedalus Labs, Inc. and its contributors
 # SPDX-License-Identifier: MIT
+
 # -----------------------------------------------------------------------------
 # File: .github/workflows/ci.yml
 # Purpose: Continuous integration - lint, type check, test
@@ -26,6 +27,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "**/uv.lock"
 
+      - name: Install dependencies
+        run: uv sync --extra dev
+
       - name: Lint with ruff
         run: uv run ruff check src/ tests/
 
@@ -47,6 +51,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "**/uv.lock"
 
+      - name: Install dependencies
+        run: uv sync --extra dev
+
       - name: Type check with ty
         run: uv run ty check src/
 
@@ -56,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.11", "3.12", "3.13"]  # TODO: Add Python 3.14 once stable
     steps:
       - uses: actions/checkout@v4
 
@@ -68,8 +75,11 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
+      - name: Install dependencies
+        run: uv sync --extra dev --python ${{ matrix.python-version }}
+
       - name: Run tests
-        run: uv run --python ${{ matrix.python-version }} pytest -v --tb=short
+        run: uv run pytest -v --tb=short
 
   markdown-lint:
     name: Lint Markdown
@@ -100,5 +110,6 @@ jobs:
 
       - name: Verify wheel
         run: |
-          uv pip install dist/*.whl --system
-          slurmq --version
+          uv venv
+          uv pip install dist/*.whl
+          uv run slurmq --version
