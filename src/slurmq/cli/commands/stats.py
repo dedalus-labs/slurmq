@@ -9,14 +9,10 @@ import json
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING
-
+from statistics import median
 import typer
 from rich.console import Console
 from rich.table import Table
-
-if TYPE_CHECKING:
-    pass
 
 console = Console()
 
@@ -118,9 +114,8 @@ def calculate_partition_stats(jobs: list[dict], name: str) -> PartitionStats:
     gpu_hours = sum(j["gpu_hours"] for j in jobs)
 
     # Calculate median wait time
-    wait_times = sorted(j["wait_hours"] for j in jobs)
-    mid = len(wait_times) // 2
-    median_wait = (wait_times[mid - 1] + wait_times[mid]) / 2 if len(wait_times) % 2 == 0 else wait_times[mid]
+    wait_times = [j["wait_hours"] for j in jobs]
+    median_wait = median(wait_times) if wait_times else 0.0
 
     # Long wait jobs (> 6 hours)
     long_wait_count = sum(1 for j in jobs if j["wait_hours"] > 6)
