@@ -15,11 +15,12 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum, auto
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from .config import ClusterConfig
+if TYPE_CHECKING:
+    from .config import ClusterConfig
 
 
 class JobState(StrEnum):
@@ -112,20 +113,20 @@ class JobState(StrEnum):
         return colors.get(self, "white")
 
     @property
-    def emoji(self) -> str:
-        """Emoji indicator for this state."""
-        emojis = {
-            JobState.COMPLETED: "✓",
-            JobState.RUNNING: "▶",
-            JobState.PENDING: "◌",
-            JobState.CANCELLED: "✗",
-            JobState.FAILED: "✗",
-            JobState.TIMEOUT: "⏱",
-            JobState.OUT_OF_MEMORY: "💥",
-            JobState.NODE_FAIL: "🔥",
-            JobState.PREEMPTED: "⏸",
+    def symbol(self) -> str:
+        """Short symbol/indicator for this state."""
+        symbols = {
+            JobState.COMPLETED: "ok",
+            JobState.RUNNING: ">",
+            JobState.PENDING: ".",
+            JobState.CANCELLED: "x",
+            JobState.FAILED: "x",
+            JobState.TIMEOUT: "T",
+            JobState.OUT_OF_MEMORY: "OOM",
+            JobState.NODE_FAIL: "NF",
+            JobState.PREEMPTED: "PR",
         }
-        return emojis.get(self, "?")
+        return symbols.get(self, "?")
 
 
 class QuotaStatus(StrEnum):
@@ -238,8 +239,10 @@ class JobRecord:
             req_mem=req_mem,
             max_rss=max_rss,
             elapsed_seconds=time_data.get("elapsed", 0),
-            start_time=datetime.fromtimestamp(start_ts) if start_ts else datetime.min,
-            submission_time=datetime.fromtimestamp(submission_ts) if submission_ts else datetime.min,
+            start_time=datetime.fromtimestamp(start_ts, tz=UTC) if start_ts else datetime.min.replace(tzinfo=UTC),
+            submission_time=datetime.fromtimestamp(submission_ts, tz=UTC)
+            if submission_ts
+            else datetime.min.replace(tzinfo=UTC),
             state=state,
             allocation_nodes=job_data.get("allocation_nodes", 1),
         )
@@ -326,7 +329,7 @@ class QuotaChecker:
             Records with start_time within the window
         """
         days = window_days if window_days is not None else self.cluster.rolling_window_days
-        cutoff = datetime.now() - timedelta(days=days)
+        cutoff = datetime.now(tz=UTC) - timedelta(days=days)
         return [r for r in records if r.start_time >= cutoff]
 
     def filter_by_qos(self, records: list[JobRecord], qos: str | None = None) -> list[JobRecord]:
@@ -404,7 +407,7 @@ class QuotaChecker:
 
         for hours in hours_ahead:
             # Calculate what the cutoff will be N hours from now
-            future_cutoff = datetime.now() + timedelta(hours=hours) - timedelta(days=window_days)
+            future_cutoff = datetime.now(tz=UTC) + timedelta(hours=hours) - timedelta(days=window_days)
 
             # Sum GPU-hours for jobs that will still be in window at that time
             future_records = [r for r in qos_filtered if r.start_time >= future_cutoff]
