@@ -41,6 +41,8 @@ uv run mkdocs build --strict # build to site/
 
 ## Code Standards
 
+See [docs/style/index.md](docs/style/index.md) for the full style guide.
+
 - All code formatted with `ruff format` (double quotes)
 - Type hints required for function signatures
 - Google-style docstrings for public APIs
@@ -65,7 +67,7 @@ Slurm is itself stylized as "Slurm", not SLURM.
 | `src/slurmq/cli/main.py`    | Typer CLI entry point        |
 | `src/slurmq/cli/commands/`  | Command implementations      |
 | `src/slurmq/core/config.py` | Configuration and validation |
-| `src/slurmq/core/slurm.py`  | Slurm command execution      |
+| `src/slurmq/core/models.py` | Domain models and enums      |
 | `src/slurmq/core/quota.py`  | GPU-hours calculation        |
 
 ## Don't

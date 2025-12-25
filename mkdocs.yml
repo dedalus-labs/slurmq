@@ -135,6 +135,11 @@ nav:
       - API Reference: reference/api.md
   - Contributing:
       - Conventional Commits: conventional-commits.md
+      - Style Guide:
+          - style/index.md
+          - Guide: style/guide.md
+          - Best Practices: style/best-practices.md
+          - Reference: style/reference.md
 
 extra_css:
   - assets/theme.css
