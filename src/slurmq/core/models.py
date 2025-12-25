@@ -4,6 +4,7 @@
 """Domain models for Slurm quota management.
 
 This module contains the core data structures used throughout slurmq:
+- Sacct* models: Pydantic models for sacct JSON output
 - JobState: Enum for Slurm job states with metadata
 - QuotaStatus: Enum for quota status levels
 - JobRecord: Parsed job data from sacct
@@ -16,6 +17,101 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum, auto
 from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+# --- Sacct JSON Models (Pydantic) ---
+
+
+class SacctTresEntry(BaseModel):
+    """Single TRES allocation entry from sacct --json."""
+
+    type: str
+    name: str = ""
+    count: int = 0
+
+
+class SacctTimeLimit(BaseModel):
+    """Time limit structure from sacct --json."""
+
+    number: int = 0
+
+
+class SacctTime(BaseModel):
+    """Time data from sacct --json job entry."""
+
+    elapsed: int = 0
+    start: int = 0
+    submission: int = 0
+    limit: SacctTimeLimit = Field(default_factory=SacctTimeLimit)
+
+
+class SacctState(BaseModel):
+    """Job state from sacct --json."""
+
+    current: list[str] = Field(default_factory=list)
+
+
+class SacctTres(BaseModel):
+    """TRES allocation data from sacct --json."""
+
+    allocated: list[SacctTresEntry] = Field(default_factory=list)
+
+
+class SacctRssMax(BaseModel):
+    """RSS max value structure."""
+
+    value: int = 0
+
+
+class SacctRss(BaseModel):
+    """RSS statistics structure."""
+
+    max: SacctRssMax = Field(default_factory=SacctRssMax)
+
+
+class SacctStatistics(BaseModel):
+    """Step statistics from sacct --json."""
+
+    RSS: SacctRss = Field(default_factory=SacctRss)
+
+
+class SacctStep(BaseModel):
+    """Job step from sacct --json."""
+
+    statistics: SacctStatistics = Field(default_factory=SacctStatistics)
+
+
+class SacctRequired(BaseModel):
+    """Required resources from sacct --json."""
+
+    memory: str = ""
+
+
+class SacctJob(BaseModel):
+    """Single job record from sacct --json output."""
+
+    job_id: int
+    name: str = ""
+    user: str = ""
+    account: str = ""
+    qos: str = ""
+    state: SacctState = Field(default_factory=SacctState)
+    time: SacctTime = Field(default_factory=SacctTime)
+    tres: SacctTres = Field(default_factory=SacctTres)
+    allocation_nodes: int = 1
+    required: SacctRequired = Field(default_factory=SacctRequired)
+    steps: list[SacctStep] = Field(default_factory=list)
+
+
+class SacctOutput(BaseModel):
+    """Root sacct --json output structure."""
+
+    jobs: list[SacctJob] = Field(default_factory=list)
+
+
+# --- Domain Enums ---
 
 
 class JobState(StrEnum):
@@ -168,7 +264,7 @@ class JobRecord:
     allocation_nodes: int = 1
     n_cpus: int = 0
     req_mem: str = ""  # Requested memory (e.g., "32G")
-    max_rss: int = 0  # Max RSS in bytes (for efficiency calc)
+    max_rss: int = 0   # Max RSS in bytes (for efficiency calc)
 
     @property
     def is_running(self) -> bool:
@@ -186,11 +282,11 @@ class JobRecord:
         return (self.n_gpus * self.elapsed_seconds) / 3600
 
     @classmethod
-    def from_sacct(cls, job_data: dict[str, Any]) -> JobRecord:
+    def from_sacct(cls, job: SacctJob) -> JobRecord:
         """Parse a job record from sacct JSON output.
 
         Args:
-            job_data: Single job dict from sacct --json output
+            job: Validated SacctJob from sacct --json output
 
         Returns:
             Parsed JobRecord
@@ -199,49 +295,38 @@ class JobRecord:
         # Extract GPU count and CPU count from TRES
         n_gpus = 0
         n_cpus = 0
-        for tres in job_data.get("tres", {}).get("allocated", []):
-            if tres.get("type") == "gres" and tres.get("name") == "gpu":
-                n_gpus = int(tres.get("count", 0))
-            elif tres.get("type") == "cpu":
-                n_cpus = int(tres.get("count", 0))
-
-        # Parse time fields
-        time_data = job_data.get("time", {})
-        start_ts = time_data.get("start", 0)
-        submission_ts = time_data.get("submission", 0)
+        for tres in job.tres.allocated:
+            if tres.type == "gres" and tres.name == "gpu":
+                n_gpus = tres.count
+            elif tres.type == "cpu":
+                n_cpus = tres.count
 
         # Parse state (using our enum)
-        state_data = job_data.get("state", {})
-        current_state = state_data.get("current", ["UNKNOWN"])
-        state_str = current_state[0] if current_state else "UNKNOWN"
+        state_str = job.state.current[0] if job.state.current else "UNKNOWN"
         state = JobState.from_slurm(state_str)
 
-        # Parse memory fields for efficiency
-        req_mem = job_data.get("required", {}).get("memory", "")
-        max_rss = 0
-        # maxrss is typically in the steps, try to get it
-        if "steps" in job_data:
-            for step in job_data.get("steps", []):
-                step_rss = step.get("statistics", {}).get("RSS", {}).get("max", {}).get("value", 0)
-                max_rss = max(max_rss, step_rss)
+        # Get max RSS from steps
+        max_rss = max((step.statistics.RSS.max.value for step in job.steps), default=0)
 
         return cls(
-            job_id=job_data.get("job_id", 0),
-            name=job_data.get("name", ""),
-            user=job_data.get("user", ""),
-            qos=job_data.get("qos", ""),
-            account=job_data.get("account", ""),
+            job_id=job.job_id,
+            name=job.name,
+            user=job.user,
+            qos=job.qos,
+            account=job.account,
             n_gpus=n_gpus,
             n_cpus=n_cpus,
-            req_mem=req_mem,
+            req_mem=job.required.memory,
             max_rss=max_rss,
-            elapsed_seconds=time_data.get("elapsed", 0),
-            start_time=datetime.fromtimestamp(start_ts, tz=UTC) if start_ts else datetime.min.replace(tzinfo=UTC),
-            submission_time=datetime.fromtimestamp(submission_ts, tz=UTC)
-            if submission_ts
+            elapsed_seconds=job.time.elapsed,
+            start_time=datetime.fromtimestamp(job.time.start, tz=UTC)
+            if job.time.start
+            else datetime.min.replace(tzinfo=UTC),
+            submission_time=datetime.fromtimestamp(job.time.submission, tz=UTC)
+            if job.time.submission
             else datetime.min.replace(tzinfo=UTC),
             state=state,
-            allocation_nodes=job_data.get("allocation_nodes", 1),
+            allocation_nodes=job.allocation_nodes,
         )
 
 
@@ -249,14 +334,14 @@ def parse_sacct_json(data: dict[str, Any]) -> list[JobRecord]:
     """Parse sacct JSON output into JobRecords.
 
     Args:
-        data: Full sacct --json output dict
+        data: Raw sacct --json output dict (will be validated)
 
     Returns:
         List of JobRecord objects
 
     """
-    jobs = data.get("jobs", [])
-    return [JobRecord.from_sacct(job) for job in jobs]
+    output = SacctOutput.model_validate(data)
+    return [JobRecord.from_sacct(job) for job in output.jobs]
 
 
 @dataclass

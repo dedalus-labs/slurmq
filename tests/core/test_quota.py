@@ -6,112 +6,69 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import TypedDict
 
 import pytest
 
 from slurmq.core.config import ClusterConfig
-from slurmq.core.models import JobRecord, JobState, QuotaStatus, UsageReport, parse_sacct_json
+from slurmq.core.models import (
+    JobRecord,
+    JobState,
+    QuotaStatus,
+    SacctJob,
+    SacctOutput,
+    SacctState,
+    SacctTime,
+    SacctTimeLimit,
+    SacctTres,
+    SacctTresEntry,
+    UsageReport,
+    parse_sacct_json,
+)
 from slurmq.core.quota import QuotaChecker
 
 
-class TresEntry(TypedDict, total=False):
-    """Single TRES allocation entry from sacct."""
-
-    type: str
-    name: str
-    count: int
-
-
-class TimeLimit(TypedDict, total=False):
-    """Time limit structure from sacct."""
-
-    number: int
-
-
-class TimeData(TypedDict, total=False):
-    """Time data from sacct job."""
-
-    elapsed: int
-    start: int
-    submission: int
-    limit: TimeLimit
-
-
-class StateData(TypedDict):
-    """Job state from sacct."""
-
-    current: list[str]
-
-
-class TresData(TypedDict, total=False):
-    """TRES allocation data from sacct."""
-
-    allocated: list[TresEntry]
-
-
-class SacctJob(TypedDict, total=False):
-    """Single job record from sacct JSON output."""
-
-    job_id: int
-    name: str
-    user: str
-    account: str
-    qos: str
-    state: StateData
-    time: TimeData
-    tres: TresData
-    allocation_nodes: int
-
-
-class SacctOutput(TypedDict):
-    """Root sacct --json output structure."""
-
-    jobs: list[SacctJob]
-
-
-SAMPLE_SACCT_OUTPUT: SacctOutput = {
-    "jobs": [
-        {
-            "job_id": 12345,
-            "name": "train_model",
-            "user": "alice",
-            "account": "research",
-            "qos": "high-priority",
-            "state": {"current": ["COMPLETED"]},
-            "time": {
-                "elapsed": 7200,  # 2 hours
-                "start": 1700000000,
-                "submission": 1699999000,
-                "limit": {"number": 86400},
-            },
-            "tres": {
-                "allocated": [
-                    {"type": "cpu", "name": "", "count": 8},
-                    {"type": "gres", "name": "gpu", "count": 4},
-                    {"type": "mem", "name": "", "count": 32000},
+SAMPLE_SACCT_OUTPUT = SacctOutput(
+    jobs=[
+        SacctJob(
+            job_id=12345,
+            name="train_model",
+            user="alice",
+            account="research",
+            qos="high-priority",
+            state=SacctState(current=["COMPLETED"]),
+            time=SacctTime(
+                elapsed=7200,  # 2 hours
+                start=1700000000,
+                submission=1699999000,
+                limit=SacctTimeLimit(number=86400),
+            ),
+            tres=SacctTres(
+                allocated=[
+                    SacctTresEntry(type="cpu", name="", count=8),
+                    SacctTresEntry(type="gres", name="gpu", count=4),
+                    SacctTresEntry(type="mem", name="", count=32000),
                 ]
-            },
-            "allocation_nodes": 1,
-        },
-        {
-            "job_id": 12346,
-            "name": "inference",
-            "user": "alice",
-            "account": "research",
-            "qos": "high-priority",
-            "state": {"current": ["RUNNING"]},
-            "time": {
-                "elapsed": 3600,  # 1 hour so far
-                "start": 1700003600,
-                "submission": 1700003500,
-                "limit": {"number": 86400},
-            },
-            "tres": {"allocated": [{"type": "gres", "name": "gpu", "count": 2}]},
-            "allocation_nodes": 1,
-        },
+            ),
+            allocation_nodes=1,
+        ),
+        SacctJob(
+            job_id=12346,
+            name="inference",
+            user="alice",
+            account="research",
+            qos="high-priority",
+            state=SacctState(current=["RUNNING"]),
+            time=SacctTime(
+                elapsed=3600,  # 1 hour so far
+                start=1700003600,
+                submission=1700003500,
+                limit=SacctTimeLimit(number=86400),
+            ),
+            tres=SacctTres(allocated=[SacctTresEntry(type="gres", name="gpu", count=2)]),
+            allocation_nodes=1,
+        ),
     ]
-}
+)
 
 
 class TestJobRecord:
@@ -119,8 +76,7 @@ class TestJobRecord:
 
     def test_parse_job_with_gpus(self) -> None:
         """Can parse a job with GPU allocation."""
-        job_data = SAMPLE_SACCT_OUTPUT["jobs"][0]
-        record = JobRecord.from_sacct(job_data)
+        record = JobRecord.from_sacct(SAMPLE_SACCT_OUTPUT.jobs[0])
 
         assert record.job_id == 12345
         assert record.name == "train_model"
@@ -132,33 +88,31 @@ class TestJobRecord:
 
     def test_parse_running_job(self) -> None:
         """Can identify a running job."""
-        job_data = SAMPLE_SACCT_OUTPUT["jobs"][1]
-        record = JobRecord.from_sacct(job_data)
+        record = JobRecord.from_sacct(SAMPLE_SACCT_OUTPUT.jobs[1])
 
         assert record.job_id == 12346
         assert record.is_running is True
 
     def test_gpu_hours_calculation(self) -> None:
         """GPU-hours calculated correctly."""
-        job_data = SAMPLE_SACCT_OUTPUT["jobs"][0]
-        record = JobRecord.from_sacct(job_data)
+        record = JobRecord.from_sacct(SAMPLE_SACCT_OUTPUT.jobs[0])
 
         # 4 GPUs * 2 hours = 8 GPU-hours
         assert record.gpu_hours == 8.0
 
     def test_job_without_gpus(self) -> None:
         """Jobs without GPUs have 0 GPU-hours."""
-        job_data = {
-            "job_id": 99999,
-            "name": "cpu_job",
-            "user": "bob",
-            "account": "research",
-            "qos": "normal",
-            "state": {"current": ["COMPLETED"]},
-            "time": {"elapsed": 3600, "start": 1700000000, "submission": 1699999000},
-            "tres": {"allocated": [{"type": "cpu", "name": "", "count": 16}]},
-        }
-        record = JobRecord.from_sacct(job_data)
+        job = SacctJob(
+            job_id=99999,
+            name="cpu_job",
+            user="bob",
+            account="research",
+            qos="normal",
+            state=SacctState(current=["COMPLETED"]),
+            time=SacctTime(elapsed=3600, start=1700000000, submission=1699999000),
+            tres=SacctTres(allocated=[SacctTresEntry(type="cpu", name="", count=16)]),
+        )
+        record = JobRecord.from_sacct(job)
         assert record.n_gpus == 0
         assert record.gpu_hours == 0.0
 
@@ -168,7 +122,9 @@ class TestParseSacctJson:
 
     def test_parse_multiple_jobs(self) -> None:
         """Can parse multiple jobs from sacct output."""
-        records = parse_sacct_json(SAMPLE_SACCT_OUTPUT)
+        # parse_sacct_json accepts raw dict and validates via Pydantic
+        raw_data = SAMPLE_SACCT_OUTPUT.model_dump()
+        records = parse_sacct_json(raw_data)
         assert len(records) == 2
         assert records[0].job_id == 12345
         assert records[1].job_id == 12346
@@ -273,7 +229,7 @@ class TestQuotaChecker:
 
     def test_calculate_usage_from_records(self, checker: QuotaChecker) -> None:
         """Can calculate total GPU-hours from job records."""
-        records = parse_sacct_json(SAMPLE_SACCT_OUTPUT)
+        records = parse_sacct_json(SAMPLE_SACCT_OUTPUT.model_dump())
         total = checker.calculate_gpu_hours(records)
 
         # Job 1: 4 GPUs * 2h = 8 GPU-hours
@@ -385,12 +341,11 @@ class TestQuotaCheckerWithMockedSlurm:
     @pytest.fixture
     def mock_sacct(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Mock subprocess.run for sacct command."""
-        import json
         import subprocess
 
         def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
             if cmd[0] == "sacct":
-                output = json.dumps(SAMPLE_SACCT_OUTPUT)
+                output = SAMPLE_SACCT_OUTPUT.model_dump_json()
                 return subprocess.CompletedProcess(cmd, returncode=0, stdout=output, stderr="")
             msg = f"Unexpected command: {cmd}"
             raise ValueError(msg)
