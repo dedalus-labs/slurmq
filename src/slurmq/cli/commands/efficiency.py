@@ -5,19 +5,42 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 import json
 import subprocess
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-import typer
 from rich.console import Console
 from rich.panel import Panel
+import typer
+
+from slurmq.cli.commands.check import _to_yaml
+
 
 if TYPE_CHECKING:
     from slurmq.cli.main import CLIContext
 
 console = Console()
+
+# Constants for display formatting and thresholds
+KB_PER_UNIT = 1024  # 1024 KB = 1 MB, etc.
+DECIMAL_PLACES_TIME = 2
+DECIMAL_PLACES_SIZE = 3
+TIME_COLUMN_WIDTH = 10
+VALUE_COLUMN_WIDTH = 11
+GOOD_EFFICIENCY_PCT = 70
+WARN_EFFICIENCY_PCT = 50
+GOOD_MEMORY_PCT = 30
+WARN_MEMORY_PCT = 20
+CPU_GOOD_PCT = 30
+CPU_WARN_PCT = 60
+MEM_GOOD_PCT = 20
+MEM_WARN_KB = 1024  # 1 MB
+SACCT_MIN_FIELDS = 11  # Minimum fields expected from sacct output
+
+# Time parsing: HH:MM:SS has 3 parts, MM:SS has 2
+TIME_PARTS_HMS = 3
+TIME_PARTS_MS = 2
 
 
 @dataclass
@@ -79,9 +102,9 @@ def _format_bytes(kb: int) -> str:
     units = ["KB", "MB", "GB", "TB", "PB"]
     size = float(kb)
     for unit in units:
-        if size < 1024:
+        if size < KB_PER_UNIT:
             return f"{size:.2f} {unit}"
-        size /= 1024
+        size /= KB_PER_UNIT
     return f"{size:.2f} PB"
 
 
@@ -122,7 +145,7 @@ def _fetch_job_efficiency(job_id: str) -> JobEfficiency | None:
     ]
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)  # noqa: S603 - sacct with job_id arg
     except subprocess.CalledProcessError:
         return None
 
@@ -132,7 +155,7 @@ def _fetch_job_efficiency(job_id: str) -> JobEfficiency | None:
 
     # Parse first line (job allocation)
     fields = lines[0].split("|")
-    if len(fields) < 11:
+    if len(fields) < SACCT_MIN_FIELDS:
         return None
 
     # Parse exit code (format: 0:0 or 1:0)
@@ -168,8 +191,8 @@ def _fetch_job_efficiency(job_id: str) -> JobEfficiency | None:
         total_cpu_seconds=total_cpu_seconds,
         allocated_mem_mb=allocated_mem_mb,
         max_rss_mb=max_rss_mb,
-        job_name=fields[10] if len(fields) > 10 else "",
-        cluster=fields[11] if len(fields) > 11 else "",
+        job_name=fields[10] if len(fields) > SACCT_MIN_FIELDS - 1 else "",
+        cluster=fields[11] if len(fields) > SACCT_MIN_FIELDS else "",
     )
 
 
@@ -191,9 +214,9 @@ def _parse_cpu_time(time_str: str) -> float:
         usec_str = "0"
 
     parts = time_str.split(":")
-    if len(parts) == 3:
+    if len(parts) == TIME_PARTS_HMS:
         hours, minutes, seconds = map(int, parts)
-    elif len(parts) == 2:
+    elif len(parts) == TIME_PARTS_MS:
         hours = 0
         minutes, seconds = map(int, parts)
     else:
@@ -270,16 +293,20 @@ def _output_json(eff: JobEfficiency) -> None:
 
 def _output_yaml(eff: JobEfficiency) -> None:
     """Output efficiency as YAML."""
-    from slurmq.cli.commands.check import _to_yaml
-
     console.print(_to_yaml(_eff_to_dict(eff)))
+
+
+def _efficiency_color(pct: float, good: float, warn: float) -> str:
+    """Get color based on efficiency percentage thresholds."""
+    if pct >= good:
+        return "green"
+    return "yellow" if pct >= warn else "red"
 
 
 def _output_rich(eff: JobEfficiency) -> None:
     """Output efficiency with rich formatting."""
-    # Determine colors based on efficiency
-    cpu_color = "green" if eff.cpu_efficiency >= 70 else "yellow" if eff.cpu_efficiency >= 30 else "red"
-    mem_color = "green" if eff.mem_efficiency >= 50 else "yellow" if eff.mem_efficiency >= 20 else "red"
+    cpu_color = _efficiency_color(eff.cpu_efficiency, GOOD_EFFICIENCY_PCT, GOOD_MEMORY_PCT)
+    mem_color = _efficiency_color(eff.mem_efficiency, WARN_EFFICIENCY_PCT, WARN_MEMORY_PCT)
 
     # State color
     state_color = "green" if eff.state == "COMPLETED" else "yellow" if eff.state == "RUNNING" else "red"
@@ -330,14 +357,14 @@ def _output_rich(eff: JobEfficiency) -> None:
         )
 
         # Recommendations
-        if eff.cpu_efficiency < 30 and eff.elapsed_seconds > 60:
+        if eff.cpu_efficiency < CPU_GOOD_PCT and eff.elapsed_seconds > CPU_WARN_PCT:
             lines.append("")
             lines.append(
                 "[yellow]💡 Low CPU efficiency. Consider:[/yellow]\n"
                 "   - Using fewer CPUs (--cpus-per-task)\n"
                 "   - Checking for I/O bottlenecks"
             )
-        if eff.mem_efficiency < 20 and eff.allocated_mem_mb > 1024:
+        if eff.mem_efficiency < MEM_GOOD_PCT and eff.allocated_mem_mb > MEM_WARN_KB:
             lines.append("")
             lines.append(
                 "[yellow]💡 Low memory efficiency. Consider:[/yellow]\n"

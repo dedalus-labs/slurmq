@@ -5,19 +5,28 @@
 
 from __future__ import annotations
 
-import tomllib
+import json
 from pathlib import Path
-from typing import Any
+import sys
+import tomllib
+from typing import TYPE_CHECKING, Any
 
-import tomli_w
-import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, IntPrompt, Prompt
+import tomli_w
+import typer
 
 from slurmq.core.config import ClusterConfig, SlurmqConfig, get_config_path, validate_config
 
+
+if TYPE_CHECKING:
+    from slurmq.cli.main import CLIContext
+
 console = Console()
+
+# Type alias for TOML-compatible config values
+ConfigValue = str | int | float | bool
 
 
 def register_config_commands(app: typer.Typer) -> None:
@@ -33,10 +42,7 @@ def register_config_commands(app: typer.Typer) -> None:
 
 def show(ctx: typer.Context) -> None:
     """Show current configuration."""
-    from slurmq.cli.main import CLIContext
-
-    cli_ctx: CLIContext = ctx.obj
-    config = cli_ctx.config
+    config: SlurmqConfig = ctx.obj.config
 
     lines = [
         f"[bold]Default cluster:[/bold] {config.default_cluster or '(not set)'}",
@@ -69,12 +75,12 @@ def show(ctx: typer.Context) -> None:
     console.print(panel)
 
 
-def path(ctx: typer.Context) -> None:
+def path() -> None:
     """Show config file path."""
     console.print(str(get_config_path()))
 
 
-def init(ctx: typer.Context) -> None:
+def init() -> None:
     """Initialize configuration interactively."""
     config_path = get_config_path()
 
@@ -119,7 +125,6 @@ def init(ctx: typer.Context) -> None:
 
 
 def set_value(
-    ctx: typer.Context,
     key: str = typer.Argument(..., help="Config key (e.g., 'clusters.stella.quota_limit')"),
     value: str = typer.Argument(..., help="New value"),
 ) -> None:
@@ -146,14 +151,14 @@ def set_value(
     console.print(f"[green]ok:[/green] Set {key} = {value}")
 
 
-def _set_nested(data: dict[str, Any], keys: list[str], value: Any) -> None:
+def _set_nested(data: dict[str, Any], keys: list[str], value: ConfigValue) -> None:
     """Set a nested dict value by key path."""
     for key in keys[:-1]:
         data = data.setdefault(key, {})
     data[keys[-1]] = value
 
 
-def _parse_value(value: str) -> Any:
+def _parse_value(value: str) -> ConfigValue:
     """Parse a string value to appropriate type."""
     # Try int
     try:
@@ -178,13 +183,9 @@ def _parse_value(value: str) -> Any:
 
 
 def validate(
-    ctx: typer.Context, file: str | None = typer.Option(None, "--file", "-f", help="Config file to validate")
+    ctx: typer.Context, *, file: str | None = typer.Option(None, "--file", "-f", help="Config file to validate")
 ) -> None:
     """Validate configuration file syntax and semantics."""
-    import json
-
-    from slurmq.cli.main import CLIContext
-
     cli_ctx: CLIContext = ctx.obj
 
     # Determine file to validate
@@ -196,15 +197,13 @@ def validate(
     # Output results
     if cli_ctx.json_output:
         result = {"valid": len(errors) == 0, "path": str(config_path), "errors": errors}
-        # Use print instead of console.print for clean JSON output
-        print(json.dumps(result, indent=2))
+        sys.stdout.write(json.dumps(result, indent=2) + "\n")
         if errors:
             raise typer.Exit(1)
+    elif errors:
+        console.print(f"[red]Config validation failed:[/red] {config_path}\n")
+        for error in errors:
+            console.print(f"  [red]•[/red] {error}")
+        raise typer.Exit(1)
     else:
-        if errors:
-            console.print(f"[red]Config validation failed:[/red] {config_path}\n")
-            for error in errors:
-                console.print(f"  [red]•[/red] {error}")
-            raise typer.Exit(1)
-        else:
-            console.print(f"[green]ok:[/green] Config valid: {config_path}")
+        console.print(f"[green]ok:[/green] Config valid: {config_path}")

@@ -5,17 +5,31 @@
 
 from __future__ import annotations
 
-import json
-import subprocess
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+import json
 from statistics import median
+import subprocess
+import sys
+from typing import TYPE_CHECKING
 
-import typer
 from rich.console import Console
 from rich.table import Table
+import typer
+
+
+if TYPE_CHECKING:
+    from slurmq.cli.main import CLIContext
+    from slurmq.core.config import ClusterConfig
 
 console = Console()
+
+# Constants for display and thresholds
+SECONDS_PER_MINUTE = 60
+MINUTES_PER_HOUR = 60
+MIN_WAIT_SECONDS = 600  # 10 minutes
+LONG_WAIT_HOURS = 6
+MAX_DAYS_FOR_WEEKLY = 6
 
 
 @dataclass
@@ -59,8 +73,10 @@ def fetch_partition_data(
     cmd = [
         "sacct",
         "-X",  # Allocations only
-        "-S", start_date,
-        "-E", end_date,
+        "-S",
+        start_date,
+        "-E",
+        end_date,
         "--allusers",
         "--json",
     ]
@@ -73,7 +89,7 @@ def fetch_partition_data(
         cmd.append(f"--account={account}")
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)  # noqa: S603 - sacct args from config
         data = json.loads(result.stdout)
         return parse_jobs(data)
     except (subprocess.CalledProcessError, json.JSONDecodeError):
@@ -94,7 +110,7 @@ def parse_jobs(data: dict) -> list[JobStats]:
         elapsed = job.get("time", {}).get("elapsed", 0)
 
         # Skip jobs with no GPUs or very short runtime (< 10min)
-        if n_gpus == 0 or elapsed < 600:
+        if n_gpus == 0 or elapsed < MIN_WAIT_SECONDS:
             continue
 
         wait_time = start_time - submit_time if start_time and submit_time else 0
@@ -133,7 +149,7 @@ def calculate_partition_stats(jobs: list[JobStats], name: str) -> PartitionStats
     median_wait = median(wait_times) if wait_times else 0.0
 
     # Long wait jobs (> 6 hours)
-    long_wait_count = sum(1 for job in jobs if job.wait_hours > 6)
+    long_wait_count = sum(1 for job in jobs if job.wait_hours > LONG_WAIT_HOURS)
     long_wait_pct = (long_wait_count / job_count * 100) if job_count > 0 else 0
 
     return PartitionStats(
@@ -151,14 +167,14 @@ def format_time_human(hours: float) -> str:
     if hours == 0:
         return "< 1min"
 
-    total_minutes = hours * 60
+    total_minutes = hours * MINUTES_PER_HOUR
     if total_minutes < 1:
         return "< 1min"
 
     h = int(hours)
-    minutes = int(round((hours - h) * 60))
+    minutes = round((hours - h) * MINUTES_PER_HOUR)
 
-    if minutes == 60:
+    if minutes == MINUTES_PER_HOUR:
         h += 1
         minutes = 0
 
@@ -183,8 +199,47 @@ _PARTITION_OPTION: list[str] | None = typer.Option(None, "--partition", "-p", he
 _QOS_OPTION: list[str] | None = typer.Option(None, "--qos", "-q", help="Filter by QoS(s)")
 
 
+def _resolve_partitions(
+    partition: list[str] | None, qos: list[str] | None, cluster: ClusterConfig | None
+) -> list[tuple[str | None, str | None]]:
+    """Determine which partitions/QoS to analyze.
+
+    Returns list of (partition, qos) tuples. Raises typer.Exit on error.
+    """
+    if partition:
+        return [(p, None) for p in partition]
+    if qos:
+        return [(None, q) for q in qos]
+    if not cluster:
+        console.print("[yellow]No cluster configured. Use --partition or --qos flags.[/yellow]")
+        raise typer.Exit(1)
+    if cluster.partitions:
+        return [(p, None) for p in cluster.partitions]
+    if cluster.qos:
+        return [(None, q) for q in cluster.qos]
+    console.print("[yellow]No partitions or QoS configured. Use --partition or --qos flags.[/yellow]")
+    raise typer.Exit(1)
+
+
+def _fetch_jobs_for_period(
+    partitions: list[tuple[str | None, str | None]], start: str, end: str, account: str | None, *, verbose: bool
+) -> list[JobStats]:
+    """Fetch job data for all partitions in a date range."""
+    jobs: list[JobStats] = []
+    for part, q in partitions:
+        name = part or q or "unknown"
+        if verbose:
+            console.print(f"[dim]  -> {name}[/dim]")
+        partition_jobs = fetch_partition_data(part, q, start, end, account)
+        for job in partition_jobs:
+            job.group = name
+        jobs.extend(partition_jobs)
+    return jobs
+
+
 def stats(
     ctx: typer.Context,
+    *,
     days: int = typer.Option(30, "--days", "-d", help="Analysis period in days"),
     compare: bool = typer.Option(True, "--compare/--no-compare", help="Show month-over-month comparison"),
     partition: list[str] | None = _PARTITION_OPTION,
@@ -196,81 +251,58 @@ def stats(
     Displays GPU utilization, wait times, and job counts with optional
     month-over-month comparison. Separates analysis by job size.
     """
-    from slurmq.cli.main import CLIContext
-
     cli_ctx: CLIContext = ctx.obj
     cluster = cli_ctx.cluster
 
+    partitions_to_check = _resolve_partitions(partition, qos, cluster)
+    account = cluster.account if cluster else None
+
     # Date ranges
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     current_start = (now - timedelta(days=days)).strftime("%Y-%m-%d")
     current_end = now.strftime("%Y-%m-%d")
-
     previous_start = (now - timedelta(days=days * 2)).strftime("%Y-%m-%d")
     previous_end = (now - timedelta(days=days)).strftime("%Y-%m-%d")
 
-    # Determine what to analyze
-    partitions_to_check: list[tuple[str | None, str | None]] = []
-
-    if partition:
-        partitions_to_check.extend((p, None) for p in partition)
-    elif qos:
-        partitions_to_check.extend((None, q) for q in qos)
-    elif cluster:
-        # Use configured partitions/QoS
-        if cluster.partitions:
-            partitions_to_check.extend((p, None) for p in cluster.partitions)
-        elif cluster.qos:
-            partitions_to_check.extend((None, q) for q in cluster.qos)
-        else:
-            console.print("[yellow]No partitions or QoS configured. Use --partition or --qos flags.[/yellow]")
-            raise typer.Exit(1)
-    else:
-        console.print("[yellow]No cluster configured. Use --partition or --qos flags.[/yellow]")
-        raise typer.Exit(1)
-
-    account = cluster.account if cluster else None
-
-    # Fetch data
-    if not cli_ctx.json_output:
+    verbose = not cli_ctx.json_output
+    if verbose:
         console.print(f"[dim]Fetching data for the last {days} days...[/dim]")
 
-    all_current_jobs: list[JobStats] = []
-    all_previous_jobs: list[JobStats] = []
+    all_current_jobs = _fetch_jobs_for_period(
+        partitions_to_check,
+        current_start,
+        current_end,
+        account,
+        verbose=verbose,
+    )
 
-    for part, q in partitions_to_check:
-        name = part or q or "unknown"
-        if not cli_ctx.json_output:
-            console.print(f"[dim]  -> {name}[/dim]")
-
-        current_jobs = fetch_partition_data(part, q, current_start, current_end, account)
-        for job in current_jobs:
-            job.group = name
-        all_current_jobs.extend(current_jobs)
-
-        if compare:
-            previous_jobs = fetch_partition_data(part, q, previous_start, previous_end, account)
-            for job in previous_jobs:
-                job.group = name
-            all_previous_jobs.extend(previous_jobs)
+    all_previous_jobs = (
+        _fetch_jobs_for_period(
+            partitions_to_check,
+            previous_start,
+            previous_end,
+            account,
+            verbose=False,
+        )
+        if compare
+        else []
+    )
 
     if not all_current_jobs:
         if cli_ctx.json_output:
-            print('{"error": "No jobs found in the specified period"}')
+            sys.stdout.write('{"error": "No jobs found in the specified period"}\n')
         else:
             console.print("[yellow]No jobs found in the specified period.[/yellow]")
         raise typer.Exit(0)
 
-    # Output
     if cli_ctx.json_output:
         _output_json(all_current_jobs, all_previous_jobs, days, small_threshold)
     else:
-        _output_rich(all_current_jobs, all_previous_jobs, days, compare, small_threshold, partitions_to_check)
+        _output_rich(all_current_jobs, all_previous_jobs, days, small_threshold, partitions_to_check, compare=compare)
 
 
 def _output_json(current_jobs: list[JobStats], previous_jobs: list[JobStats], days: int, threshold: float) -> None:
     """Output stats as JSON."""
-    import json as json_module
 
     def jobs_to_stats(jobs: list[JobStats]) -> dict:
         groups: dict[str, list[JobStats]] = {}
@@ -301,17 +333,17 @@ def _output_json(current_jobs: list[JobStats], previous_jobs: list[JobStats], da
     if previous_jobs:
         output["previous"] = jobs_to_stats(previous_jobs)
 
-    # Use print() for clean JSON output (Rich console adds formatting)
-    print(json_module.dumps(output, indent=2))
+    sys.stdout.write(json.dumps(output, indent=2) + "\n")
 
 
 def _output_rich(
     current_jobs: list[JobStats],
     previous_jobs: list[JobStats],
     days: int,
-    compare: bool,
     threshold: float,
     partitions: list[tuple[str | None, str | None]],
+    *,
+    compare: bool,
 ) -> None:
     """Output stats with Rich formatting."""
 
@@ -352,20 +384,20 @@ def _output_rich(
     console.print()
 
     # Wait times - small jobs
-    _print_wait_table(current_groups, previous_groups, partitions, days, compare, threshold, is_small=True)
+    _print_wait_table(current_groups, previous_groups, partitions, threshold, compare=compare, is_small=True)
     console.print()
 
     # Wait times - large jobs
-    _print_wait_table(current_groups, previous_groups, partitions, days, compare, threshold, is_small=False)
+    _print_wait_table(current_groups, previous_groups, partitions, threshold, compare=compare, is_small=False)
 
 
 def _print_wait_table(
     current_groups: dict[str, list[JobStats]],
     previous_groups: dict[str, list[JobStats]],
     partitions: list[tuple[str | None, str | None]],
-    days: int,
-    compare: bool,
     threshold: float,
+    *,
+    compare: bool,
     is_small: bool,
 ) -> None:
     """Print a wait time table for small or large jobs."""

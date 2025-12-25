@@ -5,5 +5,6 @@
 
 from importlib.metadata import version
 
+
 __version__ = version("slurmq")
 VERSION = __version__

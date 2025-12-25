@@ -5,23 +5,47 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from enum import Enum
 import json
 import subprocess
-from dataclasses import dataclass
+import time
 from typing import TYPE_CHECKING
 
-import typer
 from rich.console import Console
 from rich.table import Table
+import typer
 
 from slurmq.core.models import JobRecord, QuotaStatus
 from slurmq.core.quota import QuotaChecker, cancel_job, fetch_user_jobs
+
 
 if TYPE_CHECKING:
     from slurmq.cli.main import CLIContext
     from slurmq.core.config import ClusterConfig, EnforcementConfig
 
 console = Console()
+
+
+class EnforcementAction(Enum):
+    """Types of enforcement actions."""
+
+    WOULD_CANCEL = "would_cancel"
+    CANCELLED = "cancelled"
+    EXEMPT_USER = "exempt_user"
+    EXEMPT_PREFIX = "exempt_prefix"
+    GRACE_PERIOD = "grace_period"
+
+    def format_message(self, user: str, job_id: int) -> str:
+        """Format display message for this action."""
+        formats = {
+            EnforcementAction.WOULD_CANCEL: f"  [yellow]Would cancel[/yellow] job {job_id} ({user}) [dry-run]",
+            EnforcementAction.CANCELLED: f"  [red]Cancelled[/red] job {job_id} ({user})",
+            EnforcementAction.EXEMPT_USER: f"  [dim]Skipped[/dim] job {job_id} ({user}) - user exempt",
+            EnforcementAction.EXEMPT_PREFIX: f"  [dim]Skipped[/dim] job {job_id} ({user}) - job prefix exempt",
+            EnforcementAction.GRACE_PERIOD: f"  [cyan]Warning[/cyan] job {job_id} ({user}) - in grace period",
+        }
+        return formats[self]
 
 
 def register_monitor_commands(app: typer.Typer) -> None:
@@ -67,11 +91,9 @@ def _find_exceeded_timestamp(records: list[JobRecord], quota_limit: float) -> fl
 
 
 def get_all_user_statuses(
-    records: list[JobRecord], cluster: ClusterConfig, checker: QuotaChecker, grace_period_hours: int = 24
+    records: list[JobRecord], checker: QuotaChecker, *, grace_period_hours: int = 24
 ) -> list[UserStatus]:
     """Get status for all users with active jobs."""
-    import time
-
     # Group by user
     users: dict[str, list[JobRecord]] = {}
     for record in records:
@@ -119,44 +141,37 @@ def get_all_user_statuses(
 
 
 def check_enforcement(
-    statuses: list[UserStatus], enforcement: EnforcementConfig, dry_run: bool
-) -> list[tuple[str, int, str]]:
+    statuses: list[UserStatus], enforcement: EnforcementConfig, *, dry_run: bool
+) -> list[tuple[str, int, EnforcementAction]]:
     """Check which jobs should be cancelled and return actions taken.
 
     Returns list of (user, job_id, action) tuples.
     """
-    actions: list[tuple[str, int, str]] = []
+    actions: list[tuple[str, int, EnforcementAction]] = []
 
     for status in statuses:
-        # Skip users not in exceeded state
         if status.status != QuotaStatus.EXCEEDED:
             continue
 
-        # Check if in grace period
         if status.in_grace_period:
-            for job in status.active_jobs:
-                actions.append((status.user, job.job_id, "grace_period"))
+            actions.extend((status.user, job.job_id, EnforcementAction.GRACE_PERIOD) for job in status.active_jobs)
             continue
 
-        # Check exemptions
         if status.user in enforcement.exempt_users:
-            for job in status.active_jobs:
-                actions.append((status.user, job.job_id, "exempt_user"))
+            actions.extend((status.user, job.job_id, EnforcementAction.EXEMPT_USER) for job in status.active_jobs)
             continue
 
         for job in status.active_jobs:
-            # Check job prefix exemptions
             exempt = any(job.name.startswith(prefix) for prefix in enforcement.exempt_job_prefixes)
             if exempt:
-                actions.append((status.user, job.job_id, "exempt_prefix"))
+                actions.append((status.user, job.job_id, EnforcementAction.EXEMPT_PREFIX))
                 continue
 
             if dry_run:
-                actions.append((status.user, job.job_id, "would_cancel"))
+                actions.append((status.user, job.job_id, EnforcementAction.WOULD_CANCEL))
             else:
-                # Actually cancel
                 _cancel_job(job.job_id)
-                actions.append((status.user, job.job_id, "cancelled"))
+                actions.append((status.user, job.job_id, EnforcementAction.CANCELLED))
 
     return actions
 
@@ -168,6 +183,7 @@ def _cancel_job(job_id: int) -> None:
 
 def monitor(
     ctx: typer.Context,
+    *,
     interval: int = typer.Option(30, "--interval", "-i", help="Refresh interval in seconds"),
     enforce: bool = typer.Option(False, "--enforce", help="Enable quota enforcement"),
     once: bool = typer.Option(False, "--once", help="Run once and exit (no TUI)"),
@@ -186,14 +202,13 @@ def monitor(
         raise typer.Exit(1) from None
 
     if once:
-        _run_once(cli_ctx, cluster, enforce)
+        _run_once(cli_ctx, cluster, enforce=enforce)
     else:
-        _run_tui(cli_ctx, cluster, enforce, interval)
+        _run_tui(cli_ctx, cluster, enforce=enforce, interval=interval)
 
 
-def _run_once(cli_ctx: CLIContext, cluster, enforce: bool) -> None:
+def _run_once(cli_ctx: CLIContext, cluster: ClusterConfig, *, enforce: bool) -> None:
     """Run monitor once and exit."""
-    # Fetch all jobs
     try:
         records = fetch_user_jobs("ALL", cluster, all_users=True)
     except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
@@ -207,36 +222,29 @@ def _run_once(cli_ctx: CLIContext, cluster, enforce: bool) -> None:
     )
 
     grace_period = cli_ctx.config.enforcement.grace_period_hours
-    statuses = get_all_user_statuses(records, cluster, checker, grace_period_hours=grace_period)
+    statuses = get_all_user_statuses(records, checker, grace_period_hours=grace_period)
 
     if cli_ctx.json_output:
         _output_json(statuses)
         return
 
-    # Output table (unless quiet mode)
     if not cli_ctx.quiet:
         _output_table(statuses, cluster.name)
 
-    # Handle enforcement
-    if enforce and cli_ctx.config.enforcement.enabled:
-        dry_run = cli_ctx.config.enforcement.dry_run
-        actions = check_enforcement(statuses, cli_ctx.config.enforcement, dry_run)
+    if not enforce:
+        return
 
-        if actions:
-            console.print("\n[bold]Enforcement Actions:[/bold]")
-            for user, job_id, action in actions:
-                if action == "would_cancel":
-                    console.print(f"  [yellow]Would cancel[/yellow] job {job_id} ({user}) [dry-run]")
-                elif action == "cancelled":
-                    console.print(f"  [red]Cancelled[/red] job {job_id} ({user})")
-                elif action == "exempt_user":
-                    console.print(f"  [dim]Skipped[/dim] job {job_id} ({user}) - user exempt")
-                elif action == "exempt_prefix":
-                    console.print(f"  [dim]Skipped[/dim] job {job_id} ({user}) - job prefix exempt")
-                elif action == "grace_period":
-                    console.print(f"  [cyan]Warning[/cyan] job {job_id} ({user}) - in grace period")
-    elif enforce:
+    if not cli_ctx.config.enforcement.enabled:
         console.print("\n[yellow]Enforcement not enabled in config.[/yellow]")
+        return
+
+    dry_run = cli_ctx.config.enforcement.dry_run
+    actions = check_enforcement(statuses, cli_ctx.config.enforcement, dry_run=dry_run)
+
+    if actions:
+        console.print("\n[bold]Enforcement Actions:[/bold]")
+        for user, job_id, action in actions:
+            console.print(action.format_message(user, job_id))
 
 
 def _output_json(statuses: list[UserStatus]) -> None:
@@ -292,10 +300,8 @@ def _output_table(statuses: list[UserStatus], cluster_name: str) -> None:
         console.print("[dim]No users with active jobs.[/dim]")
 
 
-def _run_tui(cli_ctx: CLIContext, cluster, enforce: bool, interval: int) -> None:
+def _run_tui(cli_ctx: CLIContext, cluster: ClusterConfig, *, enforce: bool, interval: int) -> None:
     """Run the interactive TUI monitor."""
-    import time
-
     console.print(f"[bold]Monitoring {cluster.name}[/bold] (refresh every {interval}s, Ctrl+C to exit)\n")
 
     try:
@@ -309,7 +315,7 @@ def _run_tui(cli_ctx: CLIContext, cluster, enforce: bool, interval: int) -> None
                     critical_threshold=cli_ctx.config.monitoring.critical_threshold,
                 )
                 grace_period = cli_ctx.config.enforcement.grace_period_hours
-                statuses = get_all_user_statuses(records, cluster, checker, grace_period_hours=grace_period)
+                statuses = get_all_user_statuses(records, checker, grace_period_hours=grace_period)
 
                 # Clear and redraw
                 console.clear()
@@ -320,7 +326,7 @@ def _run_tui(cli_ctx: CLIContext, cluster, enforce: bool, interval: int) -> None
                 # Enforcement check
                 if enforce and cli_ctx.config.enforcement.enabled:
                     dry_run = cli_ctx.config.enforcement.dry_run
-                    actions = check_enforcement(statuses, cli_ctx.config.enforcement, dry_run)
+                    actions = check_enforcement(statuses, cli_ctx.config.enforcement, dry_run=dry_run)
                     if actions:
                         console.print("\n[bold]Enforcement:[/bold]")
                         for user, job_id, action in actions[:5]:  # Show first 5

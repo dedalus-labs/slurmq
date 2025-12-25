@@ -6,23 +6,23 @@
 from __future__ import annotations
 
 import csv
+from dataclasses import dataclass
 import io
 import json
-import subprocess
-from dataclasses import dataclass
 from pathlib import Path
+import subprocess
 from typing import TYPE_CHECKING
 
-import typer
 from rich.console import Console
 from rich.table import Table
+import typer
 
 from slurmq.core.models import JobRecord, QuotaStatus
 from slurmq.core.quota import QuotaChecker, fetch_user_jobs
 
+
 if TYPE_CHECKING:
     from slurmq.cli.main import CLIContext
-    from slurmq.core.config import ClusterConfig
 
 console = Console()
 
@@ -46,7 +46,7 @@ class UserUsage:
     total_jobs: int
 
 
-def aggregate_by_user(records: list[JobRecord], cluster: ClusterConfig, checker: QuotaChecker) -> list[UserUsage]:
+def aggregate_by_user(records: list[JobRecord], checker: QuotaChecker) -> list[UserUsage]:
     """Aggregate job records by user."""
     users: dict[str, list[JobRecord]] = {}
     for record in records:
@@ -75,7 +75,8 @@ def aggregate_by_user(records: list[JobRecord], cluster: ClusterConfig, checker:
 
 def report(
     ctx: typer.Context,
-    format: str = typer.Option("rich", "--format", "-f", help="Output format: rich, json, csv"),
+    *,
+    output_format: str = typer.Option("rich", "--format", "-f", help="Output format: rich, json, csv"),
     output: str | None = typer.Option(None, "--output", "-o", help="Output file path"),
     qos: str | None = typer.Option(None, "--qos", "-q", help="QoS to report on (overrides config)"),
     account: str | None = typer.Option(None, "--account", "-a", help="Account to report on (overrides config)"),
@@ -113,12 +114,12 @@ def report(
         warning_threshold=cli_ctx.config.monitoring.warning_threshold,
         critical_threshold=cli_ctx.config.monitoring.critical_threshold,
     )
-    user_usages = aggregate_by_user(records, cluster, checker)
+    user_usages = aggregate_by_user(records, checker)
 
     # Generate output
-    if format == "json":
+    if output_format == "json":
         content = _format_json(user_usages, cluster.name, target_qos)
-    elif format == "csv":
+    elif output_format == "csv":
         content = _format_csv(user_usages)
     else:
         _output_rich(user_usages, cluster.name, target_qos)

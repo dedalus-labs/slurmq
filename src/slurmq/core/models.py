@@ -182,7 +182,7 @@ class JobRecord:
 
     @property
     def gpu_hours(self) -> float:
-        """Allocated GPU-hours (n_gpus × elapsed time, not utilization)."""
+        """Allocated GPU-hours (n_gpus x elapsed time, not utilization)."""
         return (self.n_gpus * self.elapsed_seconds) / 3600
 
     @classmethod
@@ -263,7 +263,7 @@ def parse_sacct_json(data: dict[str, Any]) -> list[JobRecord]:
 class UsageReport:
     """A user's quota usage report.
 
-    GPU-hours are allocation-based (reserved time × GPUs), not utilization.
+    GPU-hours are allocation-based (reserved time * GPUs), not utilization.
 
     """
 

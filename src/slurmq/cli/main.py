@@ -5,9 +5,12 @@
 
 from __future__ import annotations
 
-import typer
+from pathlib import Path
+from typing import TYPE_CHECKING
+
 from rich.console import Console
 from rich.traceback import install as rich_traceback
+import typer
 
 from slurmq.cli.commands import (
     register_check_commands,
@@ -18,6 +21,11 @@ from slurmq.cli.commands import (
     register_stats_commands,
 )
 from slurmq.core.config import SlurmqConfig, load_config
+
+
+if TYPE_CHECKING:
+    from slurmq.core.config import ClusterConfig
+
 
 # Install rich tracebacks for better error messages
 rich_traceback(show_locals=False)
@@ -50,6 +58,7 @@ class CLIContext:
         config: SlurmqConfig,
         cluster: str | None = None,
         output_format: str = OutputFormat.RICH,
+        *,
         verbose: bool = False,
         quiet: bool = False,
     ) -> None:
@@ -61,7 +70,7 @@ class CLIContext:
         self.quiet = quiet
 
     @property
-    def cluster(self):
+    def cluster(self) -> ClusterConfig:
         """Get the active cluster config."""
         return self.config.get_cluster(self.cluster_name)
 
@@ -79,6 +88,7 @@ class CLIContext:
 @app.callback(invoke_without_command=True)
 def main(
     ctx: typer.Context,
+    *,
     cluster: str | None = typer.Option(None, "--cluster", "-c", help="Cluster to use (overrides default)"),
     json_output: bool = typer.Option(False, "--json", help="Output as JSON"),
     yaml_output: bool = typer.Option(False, "--yaml", help="Output as YAML"),
@@ -95,7 +105,7 @@ def main(
         from slurmq import __version__
 
         console.print(f"slurmq {__version__}")
-        raise typer.Exit()
+        raise typer.Exit
 
     # Determine output format
     if json_output and yaml_output:
@@ -108,8 +118,6 @@ def main(
         output_format = OutputFormat.YAML
 
     # Load configuration
-    from pathlib import Path
-
     config = load_config(Path(config_path) if config_path else None)
 
     # Store context for subcommands

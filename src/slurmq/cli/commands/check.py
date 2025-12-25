@@ -8,57 +8,67 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+import typer
 
 from slurmq.core.models import QuotaStatus, UsageReport
 from slurmq.core.quota import QuotaChecker, fetch_user_jobs
+
 
 if TYPE_CHECKING:
     from slurmq.cli.main import CLIContext
 
 console = Console()
 
+# Display constants
+HOURS_PER_WEEK = 168
+QUOTA_WARNING_PCT = 20  # Below this percentage, show yellow
 
-def _to_yaml(data: dict) -> str:
+# Type alias for YAML-serializable values
+YamlValue = str | int | float | bool | None
+
+
+def _yaml_value(v: YamlValue) -> str:
+    """Convert a scalar value to YAML string representation."""
+    if v is None:
+        return "null"
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, str):
+        # Quote if contains special chars
+        if any(c in v for c in ":{}[]#&*!|>'\"%@`"):
+            return f'"{v}"'
+        return v
+    return str(v)
+
+
+def _yaml_serialize(obj: dict[str, Any] | list[Any], lines: list[str], indent: int = 0) -> None:
+    """Recursively serialize dict/list to YAML lines."""
+    prefix = "  " * indent
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(v, dict | list):
+                lines.append(f"{prefix}{k}:")
+                _yaml_serialize(v, lines, indent + 1)
+            else:
+                lines.append(f"{prefix}{k}: {_yaml_value(v)}")
+    elif isinstance(obj, list):
+        for item in obj:
+            if isinstance(item, dict):
+                lines.append(f"{prefix}-")
+                _yaml_serialize(item, lines, indent + 1)
+            else:
+                lines.append(f"{prefix}- {_yaml_value(item)}")
+
+
+def _to_yaml(data: dict[str, Any]) -> str:
     """Convert dict to YAML without external dependency."""
-    # Simple YAML serializer (avoids adding pyyaml as a dependency)
-    lines = []
-
-    def serialize(obj, indent=0):
-        prefix = "  " * indent
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                if isinstance(v, dict | list):
-                    lines.append(f"{prefix}{k}:")
-                    serialize(v, indent + 1)
-                else:
-                    lines.append(f"{prefix}{k}: {_yaml_value(v)}")
-        elif isinstance(obj, list):
-            for item in obj:
-                if isinstance(item, dict):
-                    lines.append(f"{prefix}-")
-                    serialize(item, indent + 1)
-                else:
-                    lines.append(f"{prefix}- {_yaml_value(item)}")
-
-    def _yaml_value(v):
-        if v is None:
-            return "null"
-        if isinstance(v, bool):
-            return "true" if v else "false"
-        if isinstance(v, str):
-            # Quote if contains special chars
-            if any(c in v for c in ":{}[]#&*!|>'\"%@`"):
-                return f'"{v}"'
-            return v
-        return str(v)
-
-    serialize(data)
+    lines: list[str] = []
+    _yaml_serialize(data, lines)
     return "\n".join(lines)
 
 
@@ -69,6 +79,7 @@ def register_check_commands(app: typer.Typer) -> None:
 
 def check(
     ctx: typer.Context,
+    *,
     user: str | None = typer.Option(None, "--user", "-u", help="User to check (default: current user)"),
     qos: str | None = typer.Option(None, "--qos", "-q", help="QoS to check (overrides config)"),
     account: str | None = typer.Option(None, "--account", "-a", help="Account to check (overrides config)"),
@@ -121,7 +132,7 @@ def check(
     elif cli_ctx.yaml_output:
         _output_yaml(report)
     elif not cli_ctx.quiet:
-        _output_rich(report, cluster.name, forecast, checker, records, target_user)
+        _output_rich(report, cluster.name, checker, records, target_user, show_forecast=forecast)
 
 
 def _report_to_dict(report: UsageReport) -> dict:
@@ -150,7 +161,7 @@ def _output_yaml(report: UsageReport) -> None:
 
 
 def _output_rich(
-    report: UsageReport, cluster_name: str, show_forecast: bool, checker: QuotaChecker, records: list, user: str
+    report: UsageReport, cluster_name: str, checker: QuotaChecker, records: list, user: str, *, show_forecast: bool
 ) -> None:
     """Output report with rich formatting."""
     # Determine color based on status
@@ -206,8 +217,8 @@ def _output_forecast(forecast: dict[int, float], quota_limit: int) -> None:
 
     for hours, available in sorted(forecast.items()):
         pct = (available / quota_limit) * 100 if quota_limit > 0 else 0
-        color = "green" if pct > 20 else "yellow" if pct > 0 else "red"
-        time_str = f"+{hours}h" if hours < 168 else f"+{hours // 24}d"
+        color = "green" if pct > QUOTA_WARNING_PCT else "yellow" if pct > 0 else "red"
+        time_str = f"+{hours}h" if hours < HOURS_PER_WEEK else f"+{hours // 24}d"
         table.add_row(time_str, f"[{color}]{available:.1f}[/{color}]", f"[{color}]{pct:.1f}%[/{color}]")
 
     console.print(table)

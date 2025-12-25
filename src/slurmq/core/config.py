@@ -13,20 +13,26 @@ Supports:
 from __future__ import annotations
 
 import os
-import tomllib
 from pathlib import Path
-from typing import Any
+import tomllib
+from typing import TYPE_CHECKING, Any
 
-import tomli_w
 from pydantic import BaseModel, Field
-from pydantic.fields import FieldInfo
 from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict
+import tomli_w
+
+
+if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
 
 # Module-level variable to hold the config file path for settings source
 _config_file_path: Path | None = None
 
 # System-wide config path (for HPC deployments)
 SYSTEM_CONFIG_PATH = Path("/etc/slurmq/config.toml")
+
+# Maximum valid threshold value (200% of quota)
+MAX_THRESHOLD_VALUE = 2.0
 
 
 class TomlFileSettingsSource(PydanticBaseSettingsSource):
@@ -101,7 +107,7 @@ class EmailConfig(BaseModel):
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_user_env: str = "SLURMQ_SMTP_USER"
-    smtp_pass_env: str = "SLURMQ_SMTP_PASS"
+    smtp_secret_env: str = "SLURMQ_SMTP_PASS"  # noqa: S105 - env var name, not a password
 
 
 class DisplayConfig(BaseModel):
@@ -152,7 +158,7 @@ class SlurmqConfig(BaseSettings):
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        """Customise settings sources priority.
+        """Customize settings sources priority.
 
         Priority (highest first):
         1. init_settings (programmatic overrides)
@@ -181,9 +187,11 @@ class SlurmqConfig(BaseSettings):
         """
         key = name or self.default_cluster
         if not key:
-            raise ValueError("No cluster specified and no default_cluster set")
+            msg = "No cluster specified and no default_cluster set"
+            raise ValueError(msg)
         if key not in self.clusters:
-            raise ValueError(f"Unknown cluster: {key}")
+            msg = f"Unknown cluster: {key}"
+            raise ValueError(msg)
         return self.clusters[key]
 
     def save(self, path: Path) -> None:
@@ -254,10 +262,10 @@ def load_config(path: Path | None = None) -> SlurmqConfig:
     Returns:
         Loaded SlurmqConfig instance.
     """
-    global _config_file_path
+    global _config_file_path  # noqa: PLW0603 - required for pydantic-settings file source
     _config_file_path = path if path is not None else get_config_path()
 
-    # SlurmqConfig.settings_customise_sources will use _config_file_path
+    # SlurmqConfig.settings_customize_sources will use _config_file_path
     # to load the TOML file, and env vars will override
     return SlurmqConfig()
 
@@ -296,10 +304,10 @@ def validate_config(path: Path) -> list[str]:
     warning = monitoring.get("warning_threshold", 0.8)
     critical = monitoring.get("critical_threshold", 1.0)
 
-    if not (0 <= warning <= 2):
-        errors.append(f"warning_threshold {warning} should be between 0 and 2")
-    if not (0 <= critical <= 2):
-        errors.append(f"critical_threshold {critical} should be between 0 and 2")
+    if not (0 <= warning <= MAX_THRESHOLD_VALUE):
+        errors.append(f"warning_threshold {warning} should be between 0 and {MAX_THRESHOLD_VALUE}")
+    if not (0 <= critical <= MAX_THRESHOLD_VALUE):
+        errors.append(f"critical_threshold {critical} should be between 0 and {MAX_THRESHOLD_VALUE}")
     if warning > critical:
         errors.append("warning_threshold should be <= critical_threshold")
 

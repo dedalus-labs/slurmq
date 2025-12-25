@@ -3,7 +3,7 @@
 
 """Quota checking and Slurm interaction.
 
-GPU-hours are allocation-based (reserved time × GPUs), not actual utilization.
+GPU-hours are allocation-based (reserved time * GPUs), not actual utilization.
 This matches standard HPC billing semantics.
 
 This module handles:
@@ -14,12 +14,13 @@ This module handles:
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 import json
 import subprocess
-from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
 
 from .models import JobRecord, UsageReport, parse_sacct_json
+
 
 if TYPE_CHECKING:
     from .config import ClusterConfig
@@ -31,10 +32,7 @@ class QuotaChecker:
     """Checks allocated GPU-hours against cluster quota configuration."""
 
     def __init__(
-        self,
-        cluster: ClusterConfig,
-        warning_threshold: float = 0.8,
-        critical_threshold: float = 1.0,
+        self, cluster: ClusterConfig, warning_threshold: float = 0.8, critical_threshold: float = 1.0
     ) -> None:
         """Initialize QuotaChecker.
 
@@ -166,9 +164,9 @@ class QuotaChecker:
 def fetch_user_jobs(
     user: str,
     cluster: ClusterConfig,
+    *,
     all_users: bool = False,
     truncate: bool = True,
-    *,
     qos_override: str | None = None,
     account_override: str | None = None,
     partition_override: str | None = None,
@@ -236,12 +234,12 @@ def fetch_user_jobs(
     else:
         cmd.extend(["-u", user])
 
-    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)  # noqa: S603 - sacct args from config
     data = json.loads(result.stdout)
     return parse_sacct_json(data)
 
 
-def cancel_job(job_id: int, quiet: bool = True) -> bool:
+def cancel_job(job_id: int, *, quiet: bool = True) -> bool:
     """Cancel a Slurm job.
 
     Args:
@@ -258,7 +256,7 @@ def cancel_job(job_id: int, quiet: bool = True) -> bool:
     cmd.append(str(job_id))
 
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, check=True)  # noqa: S603 - scancel with job_id arg
     except subprocess.CalledProcessError:
         return False
     else:

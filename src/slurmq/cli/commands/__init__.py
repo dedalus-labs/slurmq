@@ -10,6 +10,7 @@ from .monitor import register_monitor_commands
 from .report import register_report_commands
 from .stats import register_stats_commands
 
+
 __all__ = [
     "register_check_commands",
     "register_config_commands",
