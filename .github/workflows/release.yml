@@ -45,12 +45,14 @@ jobs:
           TAG_NAME: ${{ steps.release.outputs.tag_name }}
           VERSION: ${{ steps.release.outputs.version }}
         run: |
-          echo "## slurmq Release Created" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Tag | $TAG_NAME |" >> $GITHUB_STEP_SUMMARY
-          echo "| Version | $VERSION |" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## slurmq Release Created"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            echo "| Tag | $TAG_NAME |"
+            echo "| Version | $VERSION |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   publish:
     name: Publish to PyPI
