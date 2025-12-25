@@ -6,9 +6,8 @@
 
 default: true
 
-# MD007/unordered-list-indent
-MD007:
-  indent: 4
+# MD007/unordered-list-indent - allow 2-space indent (Google style guide uses 2)
+MD007: false
 
 # MD012/no-multiple-blanks
 MD012:
@@ -43,6 +42,12 @@ MD046: false
 # MD048/code-fence-style
 MD048:
   style: backtick
+
+# MD051/link-fragments - disabled for reference docs with custom anchors
+MD051: false
+
+# MD028/no-blanks-blockquote - disabled for reference docs
+MD028: false
 
 # MD059/link-text-descriptive - "here" links are sometimes fine
 MD059: false

@@ -72,9 +72,56 @@ line-length = 119
 
 [tool.ruff.format]
 quote-style = "double"
+docstring-code-format = true
+skip-magic-trailing-comma = true
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM", "PIE", "D"]
+select = ["ALL"]
+ignore = [
+    # Formatter conflicts (technical requirement, cannot fix)
+    "COM812", # missing-trailing-comma
+    "ISC001", # single-line-implicit-string-concatenation
+
+    # Docstring style conflicts (must pick one)
+    "D203", # one-blank-line-before-class (conflicts with D211)
+    "D213", # multi-line-summary-second-line (conflicts with D212)
+
+    # Security
+    "S101", # assert - intentional in tests
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Pydantic interface requires these unused params
+"src/slurmq/core/config.py" = ["ARG002", "ARG003"]
+# Typer.Option() requires bool default as first positional arg for explicit flag names
+# CLI: Typer API requires boolean defaults, lazy imports for fast startup
+"src/slurmq/cli/**/*.py" = ["FBT003", "PLC0415"]
+# Tests: relaxed linting for test code
+"tests/**/*.py" = [
+    "ANN",     # Type annotations not required in tests
+    "ARG001",
+    "ARG002",  # Mock signatures, fixtures have unused params
+    "BLE001",
+    "S110",    # try-except-pass used in command construction tests
+    "SIM105",  # Exception handling patterns in tests
+    "EM102",
+    "TRY003",  # Inline error messages fine in tests
+    "ERA001",  # Format comments explaining test data
+    "PLC0415", # Lazy imports for patching
+    "PLR2004", # Magic values in test data
+    "SLF001",  # Private member access for testing internals
+    "TC002",
+    "TC003",   # Typing imports
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["slurmq"]
+force-sort-within-sections = true
+lines-after-imports = 2
+split-on-trailing-comma = false
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.pylint]
+max-args = 8
