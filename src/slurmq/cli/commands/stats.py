@@ -269,21 +269,11 @@ def stats(
         console.print(f"[dim]Fetching data for the last {days} days...[/dim]")
 
     all_current_jobs = _fetch_jobs_for_period(
-        partitions_to_check,
-        current_start,
-        current_end,
-        account,
-        verbose=verbose,
+        partitions_to_check, current_start, current_end, account, verbose=verbose
     )
 
     all_previous_jobs = (
-        _fetch_jobs_for_period(
-            partitions_to_check,
-            previous_start,
-            previous_end,
-            account,
-            verbose=False,
-        )
+        _fetch_jobs_for_period(partitions_to_check, previous_start, previous_end, account, verbose=False)
         if compare
         else []
     )

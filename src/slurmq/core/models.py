@@ -264,7 +264,7 @@ class JobRecord:
     allocation_nodes: int = 1
     n_cpus: int = 0
     req_mem: str = ""  # Requested memory (e.g., "32G")
-    max_rss: int = 0   # Max RSS in bytes (for efficiency calc)
+    max_rss: int = 0  # Max RSS in bytes (for efficiency calc)
 
     @property
     def is_running(self) -> bool:
