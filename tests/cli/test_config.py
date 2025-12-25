@@ -7,14 +7,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
 from typer.testing import CliRunner
 
 from slurmq.cli.main import app
 
+
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pytest import MonkeyPatch
 
 runner = CliRunner()
 
@@ -27,7 +27,7 @@ class TestConfigShow:
         result = runner.invoke(app, ["config", "show", "--help"])
         assert result.exit_code == 0
 
-    def test_config_show_displays_settings(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_config_show_displays_settings(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Config show displays current settings."""
         config = tmp_path / "config.toml"
         config.write_text("""
@@ -47,7 +47,7 @@ quota_limit = 750
 class TestConfigPath:
     """Tests for config path command."""
 
-    def test_config_path_shows_path(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_config_path_shows_path(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Config path shows the config file path."""
         config = tmp_path / "config.toml"
         config.write_text("default_cluster = 'test'")
@@ -61,7 +61,7 @@ class TestConfigPath:
 class TestConfigInit:
     """Tests for config init command."""
 
-    def test_config_init_creates_file(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_config_init_creates_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Config init creates a config file with prompts."""
         config_path = tmp_path / "slurmq" / "config.toml"
         monkeypatch.setenv("SLURMQ_CONFIG", str(config_path))
@@ -74,7 +74,7 @@ class TestConfigInit:
         content = config_path.read_text()
         assert "stella" in content.lower()
 
-    def test_config_init_does_not_overwrite_existing(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_config_init_does_not_overwrite_existing(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Config init warns if config already exists."""
         config_path = tmp_path / "config.toml"
         config_path.write_text("# existing config\ndefault_cluster = 'existing'")
@@ -85,7 +85,7 @@ class TestConfigInit:
         # Original content preserved
         assert "existing" in config_path.read_text()
 
-    def test_config_init_can_overwrite(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_config_init_can_overwrite(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Config init can overwrite existing config."""
         config_path = tmp_path / "config.toml"
         config_path.write_text("default_cluster = 'oldclustername'")
@@ -101,7 +101,7 @@ class TestConfigInit:
 class TestConfigSet:
     """Tests for config set command."""
 
-    def test_config_set_updates_value(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_config_set_updates_value(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Config set updates a config value."""
         config_path = tmp_path / "config.toml"
         config_path.write_text("""

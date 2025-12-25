@@ -6,14 +6,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
 
 from slurmq.core.config import ClusterConfig, EmailConfig, EnforcementConfig, SlurmqConfig, load_config
-
-if TYPE_CHECKING:
-    from pytest import MonkeyPatch
 
 
 class TestClusterConfig:
@@ -96,20 +92,14 @@ class TestSlurmqConfig:
     def test_get_cluster_by_name(self) -> None:
         """Can retrieve a cluster by name."""
         config = SlurmqConfig(
-            clusters={
-                "stella": ClusterConfig(name="Stella HPC"),
-                "other": ClusterConfig(name="Other Cluster"),
-            }
+            clusters={"stella": ClusterConfig(name="Stella HPC"), "other": ClusterConfig(name="Other Cluster")}
         )
         cluster = config.get_cluster("stella")
         assert cluster.name == "Stella HPC"
 
     def test_get_cluster_default(self) -> None:
         """get_cluster() with no arg uses default_cluster."""
-        config = SlurmqConfig(
-            default_cluster="stella",
-            clusters={"stella": ClusterConfig(name="Stella HPC")},
-        )
+        config = SlurmqConfig(default_cluster="stella", clusters={"stella": ClusterConfig(name="Stella HPC")})
         cluster = config.get_cluster()
         assert cluster.name == "Stella HPC"
 
@@ -121,20 +111,14 @@ class TestSlurmqConfig:
 
     def test_get_cluster_unknown_raises(self) -> None:
         """get_cluster() raises for unknown cluster name."""
-        config = SlurmqConfig(
-            default_cluster="stella",
-            clusters={"stella": ClusterConfig(name="Stella HPC")},
-        )
+        config = SlurmqConfig(default_cluster="stella", clusters={"stella": ClusterConfig(name="Stella HPC")})
         with pytest.raises(ValueError, match="Unknown cluster"):
             config.get_cluster("nonexistent")
 
     def test_cluster_names_property(self) -> None:
         """Can list all configured cluster names."""
         config = SlurmqConfig(
-            clusters={
-                "stella": ClusterConfig(name="Stella HPC"),
-                "other": ClusterConfig(name="Other Cluster"),
-            }
+            clusters={"stella": ClusterConfig(name="Stella HPC"), "other": ClusterConfig(name="Other Cluster")}
         )
         assert set(config.cluster_names) == {"stella", "other"}
 
@@ -190,7 +174,7 @@ domain = "example.edu"
 class TestConfigFromEnv:
     """Tests for loading config from environment variables."""
 
-    def test_env_overrides_file(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_env_overrides_file(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Environment variables override file config."""
         config_file = tmp_path / "config.toml"
         config_file.write_text("""
@@ -200,7 +184,7 @@ default_cluster = "stella"
         config = load_config(config_file)
         assert config.default_cluster == "other"
 
-    def test_nested_env_var(self, monkeypatch: MonkeyPatch) -> None:
+    def test_nested_env_var(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Can set nested config via double-underscore env vars."""
         monkeypatch.setenv("SLURMQ_DISPLAY__OUTPUT_FORMAT", "plain")
         config = load_config()
@@ -213,8 +197,7 @@ class TestConfigSave:
     def test_save_config(self, tmp_path: Path) -> None:
         """Can save config to a TOML file."""
         config = SlurmqConfig(
-            default_cluster="stella",
-            clusters={"stella": ClusterConfig(name="Stella HPC", quota_limit=750)},
+            default_cluster="stella", clusters={"stella": ClusterConfig(name="Stella HPC", quota_limit=750)}
         )
         config_file = tmp_path / "config.toml"
         config.save(config_file)
@@ -228,7 +211,7 @@ class TestConfigSave:
 class TestConfigPaths:
     """Tests for config file path resolution."""
 
-    def test_default_config_path(self, monkeypatch: MonkeyPatch) -> None:
+    def test_default_config_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Default config path is XDG compliant."""
         from slurmq.core.config import get_default_config_path
 
@@ -237,7 +220,7 @@ class TestConfigPaths:
         path = get_default_config_path()
         assert path == Path("/home/testuser/.config/slurmq/config.toml")
 
-    def test_xdg_config_home_respected(self, monkeypatch: MonkeyPatch) -> None:
+    def test_xdg_config_home_respected(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """XDG_CONFIG_HOME is respected."""
         from slurmq.core.config import get_default_config_path
 
@@ -245,7 +228,7 @@ class TestConfigPaths:
         path = get_default_config_path()
         assert path == Path("/custom/config/slurmq/config.toml")
 
-    def test_slurmq_config_env_override(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_slurmq_config_env_override(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """SLURMQ_CONFIG env var overrides default path."""
         from slurmq.core.config import get_config_path
 

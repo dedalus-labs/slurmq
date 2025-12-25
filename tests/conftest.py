@@ -6,18 +6,13 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
 
-if TYPE_CHECKING:
-    from pytest import MonkeyPatch
-
 
 @pytest.fixture(autouse=True)
-def clean_env(monkeypatch: MonkeyPatch) -> Iterator[None]:
+def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Clear SLURMQ_* env vars and reset config module state before each test."""
     # Clear env vars
     for key in list(os.environ.keys()):
@@ -28,8 +23,6 @@ def clean_env(monkeypatch: MonkeyPatch) -> Iterator[None]:
     import slurmq.core.config as config_module
 
     monkeypatch.setattr(config_module, "_config_file_path", None)
-
-    yield
 
 
 @pytest.fixture

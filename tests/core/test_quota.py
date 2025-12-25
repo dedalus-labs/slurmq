@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING
+from typing import TypedDict
 
 import pytest
 
@@ -14,12 +14,63 @@ from slurmq.core.config import ClusterConfig
 from slurmq.core.models import JobRecord, JobState, QuotaStatus, UsageReport, parse_sacct_json
 from slurmq.core.quota import QuotaChecker
 
-if TYPE_CHECKING:
-    from pytest import MonkeyPatch
+
+class TresEntry(TypedDict, total=False):
+    """Single TRES allocation entry from sacct."""
+
+    type: str
+    name: str
+    count: int
 
 
-# Sample sacct JSON output (simplified)
-SAMPLE_SACCT_OUTPUT = {
+class TimeLimit(TypedDict, total=False):
+    """Time limit structure from sacct."""
+
+    number: int
+
+
+class TimeData(TypedDict, total=False):
+    """Time data from sacct job."""
+
+    elapsed: int
+    start: int
+    submission: int
+    limit: TimeLimit
+
+
+class StateData(TypedDict):
+    """Job state from sacct."""
+
+    current: list[str]
+
+
+class TresData(TypedDict, total=False):
+    """TRES allocation data from sacct."""
+
+    allocated: list[TresEntry]
+
+
+class SacctJob(TypedDict, total=False):
+    """Single job record from sacct JSON output."""
+
+    job_id: int
+    name: str
+    user: str
+    account: str
+    qos: str
+    state: StateData
+    time: TimeData
+    tres: TresData
+    allocation_nodes: int
+
+
+class SacctOutput(TypedDict):
+    """Root sacct --json output structure."""
+
+    jobs: list[SacctJob]
+
+
+SAMPLE_SACCT_OUTPUT: SacctOutput = {
     "jobs": [
         {
             "job_id": 12345,
@@ -212,7 +263,7 @@ class TestQuotaChecker:
     def cluster_config(self) -> ClusterConfig:
         """Sample cluster configuration."""
         return ClusterConfig(
-            name="Della", account="research", qos=["high-priority"], quota_limit=500, rolling_window_days=30
+            name="Stella", account="research", qos=["high-priority"], quota_limit=500, rolling_window_days=30
         )
 
     @pytest.fixture
@@ -332,17 +383,17 @@ class TestQuotaCheckerWithMockedSlurm:
     """Tests that mock Slurm commands."""
 
     @pytest.fixture
-    def mock_sacct(self, monkeypatch: MonkeyPatch) -> None:
+    def mock_sacct(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Mock subprocess.run for sacct command."""
         import json
         import subprocess
 
         def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
             if cmd[0] == "sacct":
-                return subprocess.CompletedProcess(
-                    cmd, returncode=0, stdout=json.dumps(SAMPLE_SACCT_OUTPUT), stderr=""
-                )
-            raise ValueError(f"Unexpected command: {cmd}")
+                output = json.dumps(SAMPLE_SACCT_OUTPUT)
+                return subprocess.CompletedProcess(cmd, returncode=0, stdout=output, stderr="")
+            msg = f"Unexpected command: {cmd}"
+            raise ValueError(msg)
 
         monkeypatch.setattr(subprocess, "run", mock_run)
 
@@ -351,7 +402,7 @@ class TestQuotaCheckerWithMockedSlurm:
         from slurmq.core.quota import fetch_user_jobs
 
         cluster_config = ClusterConfig(
-            name="Della", account="research", qos=["high-priority"], quota_limit=500, rolling_window_days=30
+            name="Stella", account="research", qos=["high-priority"], quota_limit=500, rolling_window_days=30
         )
 
         records = fetch_user_jobs("alice", cluster_config)
@@ -361,5 +412,5 @@ class TestQuotaCheckerWithMockedSlurm:
     def cluster_config(self) -> ClusterConfig:
         """Sample cluster configuration."""
         return ClusterConfig(
-            name="Della", account="research", qos=["high-priority"], quota_limit=500, rolling_window_days=30
+            name="Stella", account="research", qos=["high-priority"], quota_limit=500, rolling_window_days=30
         )

@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 import json
-from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
@@ -14,10 +14,9 @@ from typer.testing import CliRunner
 
 from slurmq.cli.main import app
 
+
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pytest import MonkeyPatch
 
 runner = CliRunner()
 
@@ -25,7 +24,7 @@ runner = CliRunner()
 @pytest.fixture
 def mock_all_users_sacct() -> dict:
     """Sample sacct output with multiple users."""
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     return {
         "jobs": [
             {
@@ -90,7 +89,9 @@ class TestMonitorCommand:
         assert result.exit_code == 0
         assert "monitor" in result.stdout.lower()
 
-    def test_monitor_once_mode(self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: MonkeyPatch) -> None:
+    def test_monitor_once_mode(
+        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Monitor --once shows status and exits."""
         import subprocess
 
@@ -108,7 +109,7 @@ class TestMonitorCommand:
         assert "alice" in result.stdout.lower() or "bob" in result.stdout.lower()
 
     def test_monitor_json_output(
-        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Monitor --once --json outputs JSON."""
         import subprocess
@@ -131,7 +132,7 @@ class TestMonitorEnforcement:
     """Tests for monitor enforcement behavior."""
 
     def test_enforce_dry_run_does_not_cancel(
-        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Enforce with dry_run=true logs but doesn't cancel."""
         import subprocess
@@ -169,7 +170,7 @@ dry_run = true
         assert len(cancelled_jobs) == 0
 
     def test_enforce_respects_exempt_users(
-        self, tmp_path: Path, mock_all_users_sacct: dict, monkeypatch: MonkeyPatch
+        self, tmp_path: Path, mock_all_users_sacct: dict, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Enforcement skips exempt users."""
         import subprocess
@@ -213,7 +214,9 @@ exempt_users = ["alice"]  # Alice is exempt
 class TestMonitorActiveJobs:
     """Tests for active job display."""
 
-    def test_shows_active_jobs(self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: MonkeyPatch) -> None:
+    def test_shows_active_jobs(
+        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Monitor shows active jobs."""
         import subprocess
 

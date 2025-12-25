@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 import json
-from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
@@ -14,10 +14,9 @@ from typer.testing import CliRunner
 
 from slurmq.cli.main import app
 
+
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pytest import MonkeyPatch
 
 runner = CliRunner()
 
@@ -25,7 +24,7 @@ runner = CliRunner()
 @pytest.fixture
 def mock_sacct_output() -> dict:
     """Sample sacct JSON output."""
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     return {
         "jobs": [
             {
@@ -77,7 +76,7 @@ class TestCheckCommand:
         assert result.exit_code == 0
         assert "quota" in result.stdout.lower() or "usage" in result.stdout.lower()
 
-    def test_check_no_config_shows_error(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_check_no_config_shows_error(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Check without config shows helpful error."""
         # Point to non-existent config
         monkeypatch.setenv("SLURMQ_CONFIG", str(tmp_path / "nonexistent.toml"))
@@ -86,7 +85,9 @@ class TestCheckCommand:
         # Either exits with error about missing cluster or runs with defaults
         assert result.exit_code in (0, 1)
 
-    def test_check_with_config(self, config_file: Path, mock_sacct_output: dict, monkeypatch: MonkeyPatch) -> None:
+    def test_check_with_config(
+        self, config_file: Path, mock_sacct_output: dict, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Check command works with valid config."""
         import subprocess
 
@@ -103,7 +104,9 @@ class TestCheckCommand:
         result = runner.invoke(app, ["check"])
         assert result.exit_code == 0
 
-    def test_check_json_output(self, config_file: Path, mock_sacct_output: dict, monkeypatch: MonkeyPatch) -> None:
+    def test_check_json_output(
+        self, config_file: Path, mock_sacct_output: dict, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Check command can output JSON."""
         import subprocess
 
@@ -124,7 +127,9 @@ class TestCheckCommand:
         assert "user" in data
         assert "used_gpu_hours" in data
 
-    def test_check_cluster_override(self, tmp_path: Path, mock_sacct_output: dict, monkeypatch: MonkeyPatch) -> None:
+    def test_check_cluster_override(
+        self, tmp_path: Path, mock_sacct_output: dict, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Check command respects --cluster flag."""
         import subprocess
 
@@ -165,7 +170,7 @@ class TestCheckOutput:
     """Tests for check command output formatting."""
 
     def test_plain_output_contains_key_info(
-        self, config_file: Path, mock_sacct_output: dict, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_sacct_output: dict, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Plain output contains user, usage, and remaining quota."""
         import subprocess
@@ -185,7 +190,7 @@ class TestCheckOutput:
         # Should contain key information
         assert "testuser" in output or "gpu" in output
 
-    def test_warning_status_shown(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_warning_status_shown(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Warning status is shown when usage exceeds threshold."""
         import subprocess
 
@@ -202,7 +207,7 @@ rolling_window_days = 30
 [monitoring]
 warning_threshold = 0.8
 """)
-        now = datetime.now()
+        now = datetime.now(tz=UTC)
         # Job uses 9 GPU-hours (90% of 10 limit)
         mock_output = {
             "jobs": [

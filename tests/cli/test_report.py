@@ -6,9 +6,9 @@
 from __future__ import annotations
 
 import csv
+from datetime import UTC, datetime, timedelta
 import io
 import json
-from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
@@ -16,10 +16,9 @@ from typer.testing import CliRunner
 
 from slurmq.cli.main import app
 
+
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pytest import MonkeyPatch
 
 runner = CliRunner()
 
@@ -27,7 +26,7 @@ runner = CliRunner()
 @pytest.fixture
 def mock_all_users_sacct() -> dict:
     """Sample sacct output with multiple users."""
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     return {
         "jobs": [
             {
@@ -105,7 +104,9 @@ class TestReportCommand:
         assert result.exit_code == 0
         assert "report" in result.stdout.lower()
 
-    def test_report_json_output(self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: MonkeyPatch) -> None:
+    def test_report_json_output(
+        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Report command can output JSON."""
         import subprocess
 
@@ -124,7 +125,9 @@ class TestReportCommand:
         assert "users" in data
         assert len(data["users"]) >= 2  # alice and bob
 
-    def test_report_csv_output(self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: MonkeyPatch) -> None:
+    def test_report_csv_output(
+        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Report command can output CSV."""
         import subprocess
 
@@ -147,7 +150,9 @@ class TestReportCommand:
         assert "user" in reader.fieldnames
         assert "used_gpu_hours" in reader.fieldnames
 
-    def test_report_rich_output(self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: MonkeyPatch) -> None:
+    def test_report_rich_output(
+        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Report command shows rich table by default."""
         import subprocess
 
@@ -165,7 +170,7 @@ class TestReportCommand:
         assert "alice" in result.stdout.lower() or "bob" in result.stdout.lower()
 
     def test_report_to_file(
-        self, config_file: Path, mock_all_users_sacct: dict, tmp_path: Path, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_all_users_sacct: dict, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Report command can write to file."""
         import subprocess
@@ -187,7 +192,7 @@ class TestReportCommand:
         assert "alice" in content.lower() or "bob" in content.lower()
 
     def test_report_aggregates_by_user(
-        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Report aggregates GPU-hours by user."""
         import subprocess
@@ -216,7 +221,7 @@ class TestReportSorting:
     """Tests for report sorting options."""
 
     def test_report_sorted_by_usage(
-        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_all_users_sacct: dict, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Report is sorted by usage descending by default."""
         import subprocess

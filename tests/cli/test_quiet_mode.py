@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 import json
-from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
@@ -14,10 +14,9 @@ from typer.testing import CliRunner
 
 from slurmq.cli.main import app
 
+
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pytest import MonkeyPatch
 
 runner = CliRunner()
 
@@ -41,7 +40,7 @@ rolling_window_days = 30
 @pytest.fixture
 def mock_sacct_output() -> dict:
     """Sample sacct JSON output."""
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     return {
         "jobs": [
             {
@@ -74,7 +73,7 @@ class TestQuietMode:
         assert "--quiet" in result.stdout or "-q" in result.stdout
 
     def test_check_quiet_suppresses_output(
-        self, config_file: Path, mock_sacct_output: dict, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_sacct_output: dict, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Check --quiet produces no output on success."""
         import subprocess
@@ -92,7 +91,7 @@ class TestQuietMode:
         assert result.exit_code == 0
         assert result.stdout.strip() == ""
 
-    def test_check_quiet_shows_errors(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_check_quiet_shows_errors(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Check --quiet still shows errors."""
         # Point to non-existent config
         monkeypatch.setenv("SLURMQ_CONFIG", str(tmp_path / "nonexistent.toml"))
@@ -102,7 +101,7 @@ class TestQuietMode:
         assert result.exit_code != 0
 
     def test_monitor_quiet_suppresses_table(
-        self, config_file: Path, mock_sacct_output: dict, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_sacct_output: dict, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Monitor --once --quiet produces no output on success."""
         import subprocess
@@ -122,7 +121,7 @@ class TestQuietMode:
         assert "GPU" not in result.stdout
 
     def test_quiet_with_json_still_outputs_json(
-        self, config_file: Path, mock_sacct_output: dict, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_sacct_output: dict, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """--quiet --json still outputs JSON (quiet only affects rich output)."""
         import subprocess

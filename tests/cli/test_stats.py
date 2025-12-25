@@ -13,6 +13,7 @@ from typer.testing import CliRunner
 
 from slurmq.cli.main import app
 
+
 runner = CliRunner()
 
 
@@ -186,9 +187,7 @@ class TestStatsCalculations:
         from slurmq.cli.commands.stats import JobStats, calculate_partition_stats
 
         jobs = [
-            JobStats(
-                n_gpus=2, elapsed_h=5, gpu_hours=10, wait_hours=2, start_time=0, partition="gpu", qos="normal"
-            )
+            JobStats(n_gpus=2, elapsed_h=5, gpu_hours=10, wait_hours=2, start_time=0, partition="gpu", qos="normal")
         ]
         stats = calculate_partition_stats(jobs, "test")
 

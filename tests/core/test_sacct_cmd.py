@@ -14,13 +14,9 @@ NOT `-S=value`. The `=` syntax only works with GNU long options (--starttime=val
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-if TYPE_CHECKING:
-    from pytest import MonkeyPatch
 
 
 # Regex pattern to detect invalid short option syntax: -X=value where X is a single letter
@@ -38,10 +34,7 @@ def assert_no_short_opt_equals(cmd: list[str], context: str = "") -> None:
     """
     for arg in cmd:
         if INVALID_SHORT_OPT_PATTERN.match(arg):
-            pytest.fail(
-                f"Invalid short option syntax '{arg}' - use '-X value' not '-X=value'. "
-                f"Context: {context}"
-            )
+            pytest.fail(f"Invalid short option syntax '{arg}' - use '-X value' not '-X=value'. Context: {context}")
 
 
 class TestFetchUserJobsCommand:
@@ -110,9 +103,7 @@ class TestFetchUserJobsCommand:
             assert e_idx + 1 < len(cmd), "-E must have a following argument"
             assert not cmd[e_idx].startswith("-E="), "-E must not use = syntax"
 
-    def test_fetch_user_jobs_user_flag_format(
-        self, mock_subprocess: MagicMock, cluster_config: MagicMock
-    ) -> None:
+    def test_fetch_user_jobs_user_flag_format(self, mock_subprocess: MagicMock, cluster_config: MagicMock) -> None:
         """Verify -u flag uses proper format."""
         from slurmq.core.quota import fetch_user_jobs
 
@@ -141,9 +132,7 @@ class TestFetchPartitionDataCommand:
             mock.return_value.returncode = 0
             yield mock
 
-    def test_fetch_partition_data_no_equals_in_short_opts(
-        self, mock_subprocess: MagicMock
-    ) -> None:
+    def test_fetch_partition_data_no_equals_in_short_opts(self, mock_subprocess: MagicMock) -> None:
         """fetch_partition_data must not use -X=value syntax."""
         from slurmq.cli.commands.stats import fetch_partition_data
 
@@ -156,9 +145,7 @@ class TestFetchPartitionDataCommand:
         cmd = mock_subprocess.call_args[0][0]
         assert_no_short_opt_equals(cmd, "fetch_partition_data")
 
-    def test_fetch_partition_data_s_and_e_are_separate_args(
-        self, mock_subprocess: MagicMock
-    ) -> None:
+    def test_fetch_partition_data_s_and_e_are_separate_args(self, mock_subprocess: MagicMock) -> None:
         """Verify -S and -E have their values as separate list elements."""
         from slurmq.cli.commands.stats import fetch_partition_data
 
@@ -191,9 +178,7 @@ class TestLongOptionsCanUseEquals:
             mock.return_value.returncode = 0
             yield mock
 
-    def test_long_options_with_equals_are_valid(
-        self, mock_subprocess: MagicMock
-    ) -> None:
+    def test_long_options_with_equals_are_valid(self, mock_subprocess: MagicMock) -> None:
         """Long options like --qos=value, --partition=value are valid."""
         from slurmq.cli.commands.stats import fetch_partition_data
 

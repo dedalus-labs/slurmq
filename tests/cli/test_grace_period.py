@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 import json
-from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import pytest
@@ -14,24 +14,18 @@ from typer.testing import CliRunner
 
 from slurmq.cli.main import app
 
+
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pytest import MonkeyPatch
 
 runner = CliRunner()
 
 
 def make_job(
-    job_id: int,
-    user: str,
-    gpu_count: int,
-    elapsed_hours: float,
-    state: str = "RUNNING",
-    days_ago: float = 0,
+    job_id: int, user: str, gpu_count: int, elapsed_hours: float, state: str = "RUNNING", days_ago: float = 0
 ) -> dict:
     """Create a mock job record."""
-    now = datetime.now()
+    now = datetime.now(tz=UTC)
     start = now - timedelta(days=days_ago, hours=elapsed_hours)
     return {
         "job_id": job_id,
@@ -97,7 +91,7 @@ class TestGracePeriod:
     """Tests for grace period enforcement logic."""
 
     def test_job_within_grace_period_not_cancelled(
-        self, config_with_grace_period: Path, monkeypatch: MonkeyPatch
+        self, config_with_grace_period: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Jobs from users who exceeded quota within grace period are not cancelled."""
         import subprocess
@@ -130,7 +124,7 @@ class TestGracePeriod:
         assert "grace" in output or "would_cancel" not in output
 
     def test_job_outside_grace_period_cancelled(
-        self, config_with_grace_period: Path, monkeypatch: MonkeyPatch
+        self, config_with_grace_period: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Jobs from users who exceeded quota outside grace period are cancelled."""
         import subprocess
@@ -163,7 +157,7 @@ class TestGracePeriod:
         assert "would" in result.stdout.lower() or "cancel" in result.stdout.lower()
 
     def test_zero_grace_period_cancels_immediately(
-        self, config_no_grace_period: Path, monkeypatch: MonkeyPatch
+        self, config_no_grace_period: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """With grace_period_hours=0, jobs are cancelled immediately."""
         import subprocess
@@ -194,7 +188,9 @@ class TestGracePeriod:
 class TestGracePeriodJSON:
     """Tests for grace period in JSON output."""
 
-    def test_json_includes_grace_period_status(self, config_with_grace_period: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_json_includes_grace_period_status(
+        self, config_with_grace_period: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """JSON output includes whether user is in grace period."""
         import subprocess
 

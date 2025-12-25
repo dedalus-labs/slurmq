@@ -7,14 +7,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
 from typer.testing import CliRunner
 
 from slurmq.cli.main import app
 
+
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pytest import MonkeyPatch
 
 runner = CliRunner()
 
@@ -28,7 +28,7 @@ class TestConfigValidateCommand:
         assert result.exit_code == 0
         assert "validate" in result.stdout.lower()
 
-    def test_validate_valid_config(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_validate_valid_config(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Valid config passes validation."""
         config = tmp_path / "config.toml"
         config.write_text("""
@@ -45,7 +45,7 @@ quota_limit = 500
         assert result.exit_code == 0
         assert "valid" in result.stdout.lower() or "ok" in result.stdout.lower()
 
-    def test_validate_invalid_toml(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_validate_invalid_toml(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Invalid TOML fails validation."""
         config = tmp_path / "config.toml"
         config.write_text("this is [[[not valid toml")
@@ -54,7 +54,7 @@ quota_limit = 500
         result = runner.invoke(app, ["config", "validate"])
         assert result.exit_code != 0
 
-    def test_validate_missing_cluster(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_validate_missing_cluster(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Referencing undefined cluster fails validation."""
         config = tmp_path / "config.toml"
         config.write_text('default_cluster = "nonexistent"')
@@ -80,7 +80,7 @@ name = "Test"
         assert result.exit_code != 0
         assert "not found" in result.stdout.lower() or "exist" in result.stdout.lower()
 
-    def test_validate_json_output(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_validate_json_output(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """--json outputs validation result as JSON."""
         import json
 
@@ -97,7 +97,7 @@ name = "Test"
         assert "valid" in data
         assert data["valid"] is True
 
-    def test_validate_json_with_errors(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_validate_json_with_errors(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """--json includes errors array when validation fails."""
         import json
 

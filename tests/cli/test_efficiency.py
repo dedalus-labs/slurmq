@@ -13,10 +13,9 @@ from typer.testing import CliRunner
 
 from slurmq.cli.main import app
 
+
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from pytest import MonkeyPatch
 
 runner = CliRunner()
 
@@ -57,7 +56,7 @@ class TestEfficiencyCommand:
         result = runner.invoke(app, ["efficiency"])
         assert result.exit_code != 0
 
-    def test_efficiency_job_not_found(self, config_file: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_efficiency_job_not_found(self, config_file: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Efficiency shows error for non-existent job."""
         import subprocess
 
@@ -74,7 +73,7 @@ class TestEfficiencyCommand:
         assert "not found" in result.stdout.lower()
 
     def test_efficiency_with_valid_job(
-        self, config_file: Path, mock_sacct_efficiency_output: str, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_sacct_efficiency_output: str, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Efficiency command works with valid job."""
         import subprocess
@@ -93,7 +92,7 @@ class TestEfficiencyCommand:
         assert "12345" in output or "job" in output
 
     def test_efficiency_json_output(
-        self, config_file: Path, mock_sacct_efficiency_output: str, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_sacct_efficiency_output: str, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Efficiency command outputs valid JSON."""
         import subprocess
@@ -114,7 +113,7 @@ class TestEfficiencyCommand:
         assert "memory_efficiency_pct" in data
 
     def test_efficiency_alias_eff(
-        self, config_file: Path, mock_sacct_efficiency_output: str, monkeypatch: MonkeyPatch
+        self, config_file: Path, mock_sacct_efficiency_output: str, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """'eff' alias works for efficiency command."""
         import subprocess
@@ -134,7 +133,7 @@ class TestEfficiencyCommand:
 class TestEfficiencyCalculations:
     """Tests for efficiency metric calculations."""
 
-    def test_cpu_efficiency_calculation(self, config_file: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_cpu_efficiency_calculation(self, config_file: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """CPU efficiency is calculated correctly."""
         import subprocess
 
@@ -156,7 +155,7 @@ class TestEfficiencyCalculations:
         # 9000 / 28800 = 31.25%
         assert data["cpu_efficiency_pct"] == pytest.approx(31.25, rel=0.01)
 
-    def test_memory_efficiency_calculation(self, config_file: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_memory_efficiency_calculation(self, config_file: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Memory efficiency is calculated correctly."""
         import subprocess
 
@@ -180,7 +179,7 @@ class TestEfficiencyCalculations:
 class TestEfficiencyRecommendations:
     """Tests for efficiency recommendations."""
 
-    def test_low_cpu_efficiency_shows_recommendation(self, config_file: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_low_cpu_efficiency_shows_recommendation(self, config_file: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Low CPU efficiency triggers recommendation."""
         import subprocess
 
@@ -200,7 +199,9 @@ class TestEfficiencyRecommendations:
         output_lower = result.stdout.lower()
         assert "fewer cpus" in output_lower or "cpu" in output_lower
 
-    def test_low_memory_efficiency_shows_recommendation(self, config_file: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_low_memory_efficiency_shows_recommendation(
+        self, config_file: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Low memory efficiency triggers recommendation."""
         import subprocess
 

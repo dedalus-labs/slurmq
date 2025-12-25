@@ -6,18 +6,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+
+import pytest
 
 from slurmq.core.config import get_config_path, validate_config
-
-if TYPE_CHECKING:
-    from pytest import MonkeyPatch
 
 
 class TestSystemWideConfig:
     """Tests for system-wide config fallback."""
 
-    def test_env_var_takes_priority(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_env_var_takes_priority(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """SLURMQ_CONFIG env var takes highest priority."""
         env_config = tmp_path / "env.toml"
         env_config.write_text('default_cluster = "from_env"')
@@ -26,7 +24,7 @@ class TestSystemWideConfig:
         path = get_config_path()
         assert path == env_config
 
-    def test_user_config_before_system(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_user_config_before_system(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """User config (~/.config/slurmq) takes priority over system config."""
         # Create user config
         user_config_dir = tmp_path / "user" / ".config" / "slurmq"
@@ -44,15 +42,12 @@ class TestSystemWideConfig:
         monkeypatch.delenv("SLURMQ_CONFIG", raising=False)
         monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "user")
-        monkeypatch.setattr(
-            "slurmq.core.config.SYSTEM_CONFIG_PATH",
-            system_config,
-        )
+        monkeypatch.setattr("slurmq.core.config.SYSTEM_CONFIG_PATH", system_config)
 
         path = get_config_path()
         assert path == user_config
 
-    def test_system_config_fallback(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_system_config_fallback(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Falls back to system config when user config doesn't exist."""
         # No user config
         user_home = tmp_path / "user"
@@ -67,15 +62,12 @@ class TestSystemWideConfig:
         monkeypatch.delenv("SLURMQ_CONFIG", raising=False)
         monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
         monkeypatch.setattr(Path, "home", lambda: user_home)
-        monkeypatch.setattr(
-            "slurmq.core.config.SYSTEM_CONFIG_PATH",
-            system_config,
-        )
+        monkeypatch.setattr("slurmq.core.config.SYSTEM_CONFIG_PATH", system_config)
 
         path = get_config_path()
         assert path == system_config
 
-    def test_returns_user_path_when_neither_exists(self, tmp_path: Path, monkeypatch: MonkeyPatch) -> None:
+    def test_returns_user_path_when_neither_exists(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Returns user config path (for creation) when no config exists."""
         user_home = tmp_path / "user"
         user_home.mkdir()
@@ -83,10 +75,7 @@ class TestSystemWideConfig:
         monkeypatch.delenv("SLURMQ_CONFIG", raising=False)
         monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
         monkeypatch.setattr(Path, "home", lambda: user_home)
-        monkeypatch.setattr(
-            "slurmq.core.config.SYSTEM_CONFIG_PATH",
-            tmp_path / "nonexistent" / "config.toml",
-        )
+        monkeypatch.setattr("slurmq.core.config.SYSTEM_CONFIG_PATH", tmp_path / "nonexistent" / "config.toml")
 
         path = get_config_path()
         # Should return user path even though it doesn't exist
