@@ -31,10 +31,10 @@ jobs:
         id: changes
         run: |
           if git diff --quiet; then
-            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "ok: All files already have copyright headers"
           else
-            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Added copyright headers to:"
             git diff --name-only
           fi
