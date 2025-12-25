@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Dedalus Labs, Inc. and its contributors
+# SPDX-License-Identifier: MIT
+---
+# Zizmor configuration
+# https://docs.zizmor.sh/configuration/
+
+rules:
+  # Renovate handles SHA pinning with pinDigests: true
+  unpinned-uses:
+    disable: true
+
+  # Low confidence, cache poisoning is acceptable risk for publish job
+  # (we disable cache explicitly for the publish step already)
+  cache-poisoning:
+    disable: true
