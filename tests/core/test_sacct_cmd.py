@@ -13,10 +13,13 @@ NOT `-S=value`. The `=` syntax only works with GNU long options (--starttime=val
 
 from __future__ import annotations
 
+from collections.abc import Generator
 import re
 from unittest.mock import MagicMock, patch
 
 import pytest
+
+from slurmq.core.config import ClusterConfig
 
 
 # Regex pattern to detect invalid short option syntax: -X=value where X is a single letter
@@ -41,7 +44,7 @@ class TestFetchUserJobsCommand:
     """Tests for fetch_user_jobs command construction."""
 
     @pytest.fixture
-    def mock_subprocess(self) -> MagicMock:
+    def mock_subprocess(self) -> Generator[MagicMock, None, None]:
         """Mock subprocess.run to capture commands."""
         with patch("subprocess.run") as mock:
             mock.return_value.stdout = '{"jobs": []}'
@@ -49,10 +52,8 @@ class TestFetchUserJobsCommand:
             yield mock
 
     @pytest.fixture
-    def cluster_config(self) -> MagicMock:
-        """Create a mock cluster config."""
-        from slurmq.core.config import ClusterConfig
-
+    def cluster_config(self) -> ClusterConfig:
+        """Create a cluster config for testing."""
         return ClusterConfig(
             name="Test Cluster",
             account="research",
@@ -63,7 +64,7 @@ class TestFetchUserJobsCommand:
         )
 
     def test_fetch_user_jobs_no_equals_in_short_opts(
-        self, mock_subprocess: MagicMock, cluster_config: MagicMock
+        self, mock_subprocess: MagicMock, cluster_config: ClusterConfig
     ) -> None:
         """fetch_user_jobs must not use -X=value syntax for short options."""
         from slurmq.core.quota import fetch_user_jobs
@@ -78,7 +79,7 @@ class TestFetchUserJobsCommand:
         assert_no_short_opt_equals(cmd, "fetch_user_jobs")
 
     def test_fetch_user_jobs_s_and_e_are_separate_args(
-        self, mock_subprocess: MagicMock, cluster_config: MagicMock
+        self, mock_subprocess: MagicMock, cluster_config: ClusterConfig
     ) -> None:
         """Verify -S and -E have their values as separate list elements."""
         from slurmq.core.quota import fetch_user_jobs
@@ -103,7 +104,7 @@ class TestFetchUserJobsCommand:
             assert e_idx + 1 < len(cmd), "-E must have a following argument"
             assert not cmd[e_idx].startswith("-E="), "-E must not use = syntax"
 
-    def test_fetch_user_jobs_user_flag_format(self, mock_subprocess: MagicMock, cluster_config: MagicMock) -> None:
+    def test_fetch_user_jobs_user_flag_format(self, mock_subprocess: MagicMock, cluster_config: ClusterConfig) -> None:
         """Verify -u flag uses proper format."""
         from slurmq.core.quota import fetch_user_jobs
 
@@ -125,7 +126,7 @@ class TestFetchPartitionDataCommand:
     """Tests for stats.py fetch_partition_data command construction."""
 
     @pytest.fixture
-    def mock_subprocess(self) -> MagicMock:
+    def mock_subprocess(self) -> Generator[MagicMock, None, None]:
         """Mock subprocess.run to capture commands."""
         with patch("subprocess.run") as mock:
             mock.return_value.stdout = '{"jobs": []}'
@@ -171,7 +172,7 @@ class TestLongOptionsCanUseEquals:
     """Verify that long options (--flag=value) ARE allowed."""
 
     @pytest.fixture
-    def mock_subprocess(self) -> MagicMock:
+    def mock_subprocess(self) -> Generator[MagicMock, None, None]:
         """Mock subprocess.run."""
         with patch("subprocess.run") as mock:
             mock.return_value.stdout = '{"jobs": []}'
